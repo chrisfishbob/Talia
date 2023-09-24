@@ -71,17 +71,20 @@ impl Board {
         let mut rank = 7;
 
         for symbol in fen_string_fields[0].chars() {
-            if symbol == '/' {
-                file = 0;
-                rank -= 1;
-                continue;
-            }
+            match symbol {
+                '/' => {
+                    file = 0;
+                    rank -= 1;
+                }
+                '1'..='8' => file += symbol.to_digit(10).unwrap(),
+                piece_char => {
+                    let piece = symbol_to_piece
+                        .get(&piece_char)
+                        .ok_or(FenParseError::new("Invalid piece char in FEN string"))?;
 
-            if let Some(digit) = symbol.to_digit(10) {
-                file += digit;
-            } else {
-                board[rank * 8 + file as usize] = symbol_to_piece[&symbol];
-                file += 1;
+                    board[rank * 8 + file as usize] = *piece;
+                    file += 1;
+                }
             }
         }
 
@@ -137,9 +140,13 @@ fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize
 
     let rank = en_passant_square_chars
         .next()
-        .ok_or(FenParseError::new("failed to get rank from en passant field"))?
+        .ok_or(FenParseError::new(
+            "failed to get rank from en passant field",
+        ))?
         .to_digit(10)
-        .ok_or(FenParseError::new("failed to parse rank to a valid integer"))? as usize
+        .ok_or(FenParseError::new(
+            "failed to parse rank to a valid integer",
+        ))? as usize
         - 1;
 
     Ok(Some(rank * 8 + file_num))
@@ -147,7 +154,41 @@ fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize
 
 #[cfg(test)]
 mod tests {
-    use crate::board::parse_en_passant_square;
+    use crate::{board::{Board, parse_en_passant_square}, Piece, Color};
+
+    #[test]
+    fn test_default_board_config() {
+        let board = Board::default_config();
+        assert_eq!(board.board[0], Piece::Rook(Color::White));
+        assert_eq!(board.board[1], Piece::Knight(Color::White));
+        assert_eq!(board.board[2], Piece::Bishop(Color::White));
+        assert_eq!(board.board[3], Piece::Queen(Color::White));
+        assert_eq!(board.board[4], Piece::King(Color::White));
+        assert_eq!(board.board[5], Piece::Bishop(Color::White));
+        assert_eq!(board.board[6], Piece::Knight(Color::White));
+        assert_eq!(board.board[7], Piece::Rook(Color::White));
+
+        for i in 8..=15 {
+            assert_eq!(board.board[i], Piece::Pawn(Color::White));
+        }
+
+        for i in 16..=47 {
+            assert_eq!(board.board[i], Piece::None);
+        }
+
+        for i in 48..=55 {
+            assert_eq!(board.board[i], Piece::Pawn(Color::Black));
+        }
+
+        assert_eq!(board.board[56], Piece::Rook(Color::Black));
+        assert_eq!(board.board[57], Piece::Knight(Color::Black));
+        assert_eq!(board.board[58], Piece::Bishop(Color::Black));
+        assert_eq!(board.board[59], Piece::Queen(Color::Black));
+        assert_eq!(board.board[60], Piece::King(Color::Black));
+        assert_eq!(board.board[61], Piece::Bishop(Color::Black));
+        assert_eq!(board.board[62], Piece::Knight(Color::Black));
+        assert_eq!(board.board[63], Piece::Rook(Color::Black));
+    }
 
     #[test]
     fn test_parse_en_passant_square_none() {
@@ -175,5 +216,36 @@ mod tests {
         let field = "f7";
         let index = parse_en_passant_square(field);
         assert_eq!(index.unwrap(), Some(53));
+    }
+
+    #[test]
+    fn test_parse_en_passant_square_h8() {
+        let field = "h8";
+        let index = parse_en_passant_square(field);
+        assert_eq!(index.unwrap(), Some(63));
+    }
+
+    #[test]
+    fn test_parse_en_passant_square_invalid_file() {
+        let field = "-7";
+        let index = parse_en_passant_square(field);
+        assert!(index.is_err());
+        assert_eq!(index.err().unwrap().to_string(), "invalid file provided, should be a-z")
+    }
+
+    #[test]
+    fn test_parse_en_passant_square_missing_rank() {
+        let field = "h";
+        let index = parse_en_passant_square(field);
+        assert!(index.is_err());
+        assert_eq!(index.err().unwrap().to_string(), "failed to get rank from en passant field")
+    }
+
+    #[test]
+    fn test_parse_en_passant_square_invalid_rank() {
+        let field = "hh";
+        let index = parse_en_passant_square(field);
+        assert!(index.is_err());
+        assert_eq!(index.err().unwrap().to_string(), "failed to parse rank to a valid integer")
     }
 }

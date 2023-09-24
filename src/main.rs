@@ -4,7 +4,7 @@
 pub mod board;
 use crate::board::Board;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Piece {
     None,
     Pawn(Color),
@@ -15,7 +15,7 @@ enum Piece {
     King(Color),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Color {
     White,
     Black,
@@ -27,6 +27,4 @@ fn main() {
         Ok(b) => println!("We good!"),
         Err(e) => println!("Oh no: {e}"),
     }
-    // println!("Hello, world!");
-    // println!("The board is {:#?}", board);
 }
