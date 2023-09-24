@@ -91,7 +91,7 @@ impl Board {
         let to_move = match fen_string_fields[1] {
             "w" => Color::White,
             "b" => Color::Black,
-            other => {
+            _ => {
                 return Err(BoardError::new(
                     "failed to parse active board color, must be 'b' or 'w'.",
                 ))

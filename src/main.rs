@@ -1,6 +1,3 @@
-// I know, I know, will remove once this is more than 0.0001% done.
-// The LSP is being annoying right now.
-#![allow(dead_code, unused_variables)]
 pub mod board;
 use crate::board::Board;
 
@@ -22,9 +19,7 @@ enum Color {
 }
 
 fn main() {
-    let board = Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq @ 0 1");
-    match board {
-        Ok(b) => println!("We good!"),
-        Err(e) => println!("Oh no: {e}"),
-    }
+    let board = Board::default_config();
+    println!("Lubyanka Chess Engine: v0.0.1");
+    println!("{:#?}", board)
 }
