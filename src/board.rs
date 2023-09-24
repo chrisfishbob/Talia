@@ -3,39 +3,39 @@ use std::collections::HashMap;
 use crate::{Color, Piece};
 use std::{error, fmt};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Board {
     board: [Piece; 64],
     to_move: Color,
-    en_passant_square: Option<usize>,
     can_white_king_side_castle: bool,
     can_black_king_side_castle: bool,
     can_white_queen_side_castle: bool,
     can_black_queen_side_castle: bool,
+    en_passant_square: Option<usize>,
     half_move_clock: u32,
     full_move_number: u32,
 }
 
 #[derive(Debug, Clone)]
-pub struct FenParseError {
+pub struct BoardError {
     message: String,
 }
 
-impl FenParseError {
-    pub fn new(message: &str) -> FenParseError {
-        FenParseError {
+impl BoardError {
+    pub fn new(message: &str) -> BoardError {
+        BoardError {
             message: message.to_string(),
         }
     }
 }
 
-impl fmt::Display for FenParseError {
+impl fmt::Display for BoardError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
     }
 }
 
-impl error::Error for FenParseError {}
+impl error::Error for BoardError {}
 
 impl Board {
     pub fn default_config() -> Self {
@@ -43,7 +43,7 @@ impl Board {
             .expect("failed to construct default board config")
     }
 
-    pub fn from_fen(fen: &str) -> Result<Self, FenParseError> {
+    pub fn from_fen(fen: &str) -> Result<Self, BoardError> {
         // 0: board arrangement
         // 1: active color
         // 2: Castling availability
@@ -80,7 +80,7 @@ impl Board {
                 piece_char => {
                     let piece = symbol_to_piece
                         .get(&piece_char)
-                        .ok_or(FenParseError::new("Invalid piece char in FEN string"))?;
+                        .ok_or(BoardError::new("Invalid piece char in FEN string"))?;
 
                     board[rank * 8 + file as usize] = *piece;
                     file += 1;
@@ -92,7 +92,7 @@ impl Board {
             "w" => Color::White,
             "b" => Color::Black,
             other => {
-                return Err(FenParseError::new(
+                return Err(BoardError::new(
                     "failed to parse active board color, must be 'b' or 'w'.",
                 ))
             }
@@ -105,16 +105,16 @@ impl Board {
 
         let half_move_clock: u32 = fen_string_fields[4]
             .parse()
-            .map_err(|_| FenParseError::new("failed to parse half move clock from fen"))?;
+            .map_err(|_| BoardError::new("failed to parse half move clock from fen"))?;
 
         let full_move_number: u32 = fen_string_fields[5]
             .parse()
-            .map_err(|_| FenParseError::new("failed to parse full move clock from fen"))?;
+            .map_err(|_| BoardError::new("failed to parse full move clock from fen"))?;
 
         Ok(Self {
             board,
             to_move,
-            en_passant_square: parse_en_passant_square(fen_string_fields[3])?,
+            en_passant_square: Self::parse_en_passant_square(fen_string_fields[3])?,
             can_white_king_side_castle: castling_rights.contains(&'K'),
             can_black_king_side_castle: castling_rights.contains(&'k'),
             can_white_queen_side_castle: castling_rights.contains(&'Q'),
@@ -123,38 +123,40 @@ impl Board {
             full_move_number,
         })
     }
-}
 
-fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>, FenParseError> {
-    if en_passant_sqaure_field == "-" {
-        return Ok(None);
+    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>, BoardError> {
+        if en_passant_sqaure_field == "-" {
+            return Ok(None);
+        }
+
+        Ok(Some(Self::index_from_algebraic(en_passant_sqaure_field)?))
     }
 
-    let mut en_passant_square_chars = en_passant_sqaure_field.chars();
+    fn index_from_algebraic(square: &str) -> Result<usize, BoardError> {
+        let mut square_chars = square.chars();
 
-    let file_char = en_passant_square_chars.next().unwrap();
-    if !file_char.is_ascii_lowercase() {
-        return Err(FenParseError::new("invalid file provided, should be a-z"));
+        let file_char = square_chars.next().unwrap();
+
+        if !file_char.is_ascii_lowercase() {
+            return Err(BoardError::new("invalid file provided, should be a-z"));
+        }
+        let file_num = file_char as usize - 'a' as usize;
+
+        let rank = square_chars
+            .next()
+            .ok_or(BoardError::new("failed to get rank from en passant field"))?
+            .to_digit(10)
+            .ok_or(BoardError::new("failed to parse rank to a valid integer"))?
+            as usize
+            - 1;
+
+        Ok(rank * 8 + file_num)
     }
-    let file_num = file_char as usize - 'a' as usize;
-
-    let rank = en_passant_square_chars
-        .next()
-        .ok_or(FenParseError::new(
-            "failed to get rank from en passant field",
-        ))?
-        .to_digit(10)
-        .ok_or(FenParseError::new(
-            "failed to parse rank to a valid integer",
-        ))? as usize
-        - 1;
-
-    Ok(Some(rank * 8 + file_num))
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::{Board, parse_en_passant_square}, Piece, Color};
+    use crate::{board::Board, Color, Piece};
 
     #[test]
     fn test_default_board_config() {
@@ -188,64 +190,104 @@ mod tests {
         assert_eq!(board.board[61], Piece::Bishop(Color::Black));
         assert_eq!(board.board[62], Piece::Knight(Color::Black));
         assert_eq!(board.board[63], Piece::Rook(Color::Black));
+
+        assert_eq!(board.to_move, Color::White);
+        assert_eq!(board.en_passant_square, None);
+        assert!(board.can_white_king_side_castle);
+        assert!(board.can_white_queen_side_castle);
+        assert!(board.can_black_king_side_castle);
+        assert!(board.can_black_queen_side_castle);
+        assert_eq!(board.half_move_clock, 0);
+        assert_eq!(board.full_move_number, 1);
+    }
+
+    #[test]
+    fn test_from_fen_sicilian_defense() {
+        let mut default_board = Board::default_config();
+        default_board.to_move = Color::Black;
+        default_board.half_move_clock = 1;
+        default_board.full_move_number = 2;
+        default_board.board[Board::index_from_algebraic("e2").unwrap()] = Piece::None;
+        default_board.board[Board::index_from_algebraic("e4").unwrap()] = Piece::Pawn(Color::White);
+        default_board.board[Board::index_from_algebraic("c7").unwrap()] = Piece::None;
+        default_board.board[Board::index_from_algebraic("c5").unwrap()] = Piece::Pawn(Color::Black);
+        default_board.board[Board::index_from_algebraic("g1").unwrap()] = Piece::None;
+        default_board.board[Board::index_from_algebraic("f3").unwrap()] =
+            Piece::Knight(Color::White);
+
+        // Position after 1. e4, c5 => 2. Nf3
+        let created_board =
+            Board::from_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
+                .unwrap();
+
+        assert_eq!(default_board, created_board)
     }
 
     #[test]
     fn test_parse_en_passant_square_none() {
         let field = "-";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert_eq!(index.unwrap(), None);
     }
 
     #[test]
     fn test_parse_en_passant_square_a1() {
         let field = "a1";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert_eq!(index.unwrap(), Some(0));
     }
 
     #[test]
     fn test_parse_en_passant_square_e4() {
         let field = "e4";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert_eq!(index.unwrap(), Some(28));
     }
 
     #[test]
     fn test_parse_en_passant_square_f7() {
         let field = "f7";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert_eq!(index.unwrap(), Some(53));
     }
 
     #[test]
     fn test_parse_en_passant_square_h8() {
         let field = "h8";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert_eq!(index.unwrap(), Some(63));
     }
 
     #[test]
     fn test_parse_en_passant_square_invalid_file() {
         let field = "-7";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(index.err().unwrap().to_string(), "invalid file provided, should be a-z")
+        assert_eq!(
+            index.err().unwrap().to_string(),
+            "invalid file provided, should be a-z"
+        )
     }
 
     #[test]
     fn test_parse_en_passant_square_missing_rank() {
         let field = "h";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(index.err().unwrap().to_string(), "failed to get rank from en passant field")
+        assert_eq!(
+            index.err().unwrap().to_string(),
+            "failed to get rank from en passant field"
+        )
     }
 
     #[test]
     fn test_parse_en_passant_square_invalid_rank() {
         let field = "hh";
-        let index = parse_en_passant_square(field);
+        let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(index.err().unwrap().to_string(), "failed to parse rank to a valid integer")
+        assert_eq!(
+            index.err().unwrap().to_string(),
+            "failed to parse rank to a valid integer"
+        )
     }
 }
