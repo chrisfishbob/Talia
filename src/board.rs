@@ -135,22 +135,26 @@ impl Board {
     fn index_from_algebraic(square: &str) -> Result<usize, BoardError> {
         let mut square_chars = square.chars();
 
-        let file_char = square_chars.next().unwrap();
-
-        if !file_char.is_ascii_lowercase() {
-            return Err(BoardError::new("invalid file provided, should be a-z"));
-        }
-        let file_num = file_char as usize - 'a' as usize;
-
-        let rank = square_chars
+        let file_char = square_chars
             .next()
-            .ok_or(BoardError::new("failed to get rank from en passant field"))?
-            .to_digit(10)
-            .ok_or(BoardError::new("failed to parse rank to a valid integer"))?
-            as usize
-            - 1;
+            .ok_or_else(|| BoardError::new("invalid file provided, could not find file"))?;
 
-        Ok(rank * 8 + file_num)
+        match file_char {
+            'a'..='h' => {
+                let file_num = file_char as usize - 'a' as usize;
+                square_chars
+                    .next()
+                    .ok_or_else(|| BoardError::new("failed to get rank from en passant field"))
+                    .and_then(|rank_char| {
+                        rank_char.to_digit(10).ok_or_else(|| {
+                            BoardError::new("failed to parse rank to a valid integer")
+                        })
+                    })
+                    .map(|rank| rank as usize - 1)
+                    .map(|rank| rank * 8 + file_num)
+            }
+            _ => Err(BoardError::new("invalid file provided, should be a-z")),
+        }
     }
 }
 
