@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{Color, Piece};
+use crate::piece::{Piece, Color};
 use std::{error, fmt};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -160,7 +160,7 @@ impl Board {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, Color, Piece};
+    use crate::{board::Board, piece::{Color, Piece}};
 
     #[test]
     fn test_default_board_config() {
