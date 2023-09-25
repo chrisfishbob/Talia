@@ -146,7 +146,7 @@ impl Board {
         }
 
         Ok(Some(
-            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize,
+            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize
         ))
     }
 
@@ -166,24 +166,12 @@ mod tests {
     fn test_default_board_config() {
         let board = Board::starting_position();
         assert_eq!(board.board[Square::A1 as usize], Piece::Rook(Color::White));
-        assert_eq!(
-            board.board[Square::B1 as usize],
-            Piece::Knight(Color::White)
-        );
-        assert_eq!(
-            board.board[Square::C1 as usize],
-            Piece::Bishop(Color::White)
-        );
+        assert_eq!(board.board[Square::B1 as usize], Piece::Knight(Color::White));
+        assert_eq!(board.board[Square::C1 as usize], Piece::Bishop(Color::White));
         assert_eq!(board.board[Square::D1 as usize], Piece::Queen(Color::White));
         assert_eq!(board.board[Square::E1 as usize], Piece::King(Color::White));
-        assert_eq!(
-            board.board[Square::F1 as usize],
-            Piece::Bishop(Color::White)
-        );
-        assert_eq!(
-            board.board[Square::G1 as usize],
-            Piece::Knight(Color::White)
-        );
+        assert_eq!(board.board[Square::F1 as usize], Piece::Bishop(Color::White));
+        assert_eq!(board.board[Square::G1 as usize], Piece::Knight(Color::White));
         assert_eq!(board.board[Square::H1 as usize], Piece::Rook(Color::White));
 
         for i in Square::A2 as usize..=Square::H2 as usize {
@@ -199,24 +187,12 @@ mod tests {
         }
 
         assert_eq!(board.board[Square::A8 as usize], Piece::Rook(Color::Black));
-        assert_eq!(
-            board.board[Square::B8 as usize],
-            Piece::Knight(Color::Black)
-        );
-        assert_eq!(
-            board.board[Square::C8 as usize],
-            Piece::Bishop(Color::Black)
-        );
+        assert_eq!(board.board[Square::B8 as usize], Piece::Knight(Color::Black));
+        assert_eq!(board.board[Square::C8 as usize], Piece::Bishop(Color::Black));
         assert_eq!(board.board[Square::D8 as usize], Piece::Queen(Color::Black));
         assert_eq!(board.board[Square::E8 as usize], Piece::King(Color::Black));
-        assert_eq!(
-            board.board[Square::F8 as usize],
-            Piece::Bishop(Color::Black)
-        );
-        assert_eq!(
-            board.board[Square::G8 as usize],
-            Piece::Knight(Color::Black)
-        );
+        assert_eq!(board.board[Square::F8 as usize], Piece::Bishop(Color::Black));
+        assert_eq!(board.board[Square::G8 as usize], Piece::Knight(Color::Black));
         assert_eq!(board.board[Square::H8 as usize], Piece::Rook(Color::Black));
 
         assert_eq!(board.to_move, Color::White);
@@ -324,10 +300,7 @@ mod tests {
         let field = "-7";
         let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(
-            index.err().unwrap().to_string(),
-            "Invalid square string: -7"
-        )
+        assert_eq!(index.err().unwrap().to_string(), "Invalid square string: -7")
     }
 
     #[test]
@@ -343,9 +316,6 @@ mod tests {
         let field = "hh";
         let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(
-            index.err().unwrap().to_string(),
-            "Invalid square string: hh"
-        )
+        assert_eq!(index.err().unwrap().to_string(), "Invalid square string: hh")
     }
 }
