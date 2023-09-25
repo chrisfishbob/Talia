@@ -185,15 +185,15 @@ mod tests {
         );
         assert_eq!(board.board[Square::H1 as usize], Piece::Rook(Color::White));
 
-        for i in 8..=15 {
+        for i in Square::A2 as usize..=Square::H2 as usize {
             assert_eq!(board.board[i], Piece::Pawn(Color::White));
         }
 
-        for i in 16..=47 {
+        for i in Square::A3 as usize..=Square::H6 as usize {
             assert_eq!(board.board[i], Piece::None);
         }
 
-        for i in 48..=55 {
+        for i in Square::A7 as usize..=Square::H7 as usize {
             assert_eq!(board.board[i], Piece::Pawn(Color::Black));
         }
 
