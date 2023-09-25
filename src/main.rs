@@ -1,5 +1,6 @@
 pub mod board;
 pub mod piece;
+pub mod square;
 use crate::board::Board;
 
 fn main() {

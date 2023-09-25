@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use crate::piece::{Color, Piece};
+use crate::square::Square;
 use std::{error, fmt};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -143,45 +144,24 @@ impl Board {
             return Ok(None);
         }
 
-        Ok(Some(Self::index_from_algebraic(en_passant_sqaure_field)?))
+        Ok(Some(
+            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize,
+        ))
     }
 
-    fn index_from_algebraic(square: &str) -> Result<usize, BoardError> {
-        let mut square_chars = square.chars();
-
-        let file_char = square_chars
-            .next()
-            .ok_or_else(|| BoardError::new("invalid file provided, could not find file"))?;
-
-        match file_char {
-            'a'..='h' => {
-                let file_num = file_char as usize - 'a' as usize;
-
-                square_chars
-                    .next()
-                    .ok_or_else(|| BoardError::new("failed to get rank from en passant field"))
-                    .and_then(|rank_char| {
-                        rank_char.to_digit(10).ok_or_else(|| {
-                            BoardError::new("failed to parse rank to a valid integer")
-                        })
-                    })
-                    .map(|rank| rank as usize - 1)
-                    .map(|rank| rank * 8 + file_num)
-            }
-            _ => Err(BoardError::new("invalid file provided, should be a-z")),
-        }
+    pub fn place_piece(&mut self, square: Square, piece: Piece) {
+        self.board[square as usize] = piece;
     }
 
-    pub fn place_piece(&mut self, square: &str, piece: Piece) -> Result<(), BoardError> {
-        self.board[Self::index_from_algebraic(square)?] = piece;
-        Ok(())
+    pub fn piece_at(&mut self, square: Square) -> &mut Piece {
+        &mut self.board[square as usize]
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::{
-        board::Board,
+        board::{Board, Square},
         piece::{Color, Piece},
     };
 
@@ -234,13 +214,13 @@ mod tests {
         default_board.to_move = Color::Black;
         default_board.half_move_clock = 1;
         default_board.full_move_number = 2;
-        default_board.board[Board::index_from_algebraic("e2").unwrap()] = Piece::None;
-        default_board.board[Board::index_from_algebraic("e4").unwrap()] = Piece::Pawn(Color::White);
-        default_board.board[Board::index_from_algebraic("c7").unwrap()] = Piece::None;
-        default_board.board[Board::index_from_algebraic("c5").unwrap()] = Piece::Pawn(Color::Black);
-        default_board.board[Board::index_from_algebraic("g1").unwrap()] = Piece::None;
-        default_board.board[Board::index_from_algebraic("f3").unwrap()] =
-            Piece::Knight(Color::White);
+        default_board.place_piece(Square::E2, Piece::None);
+        default_board.place_piece(Square::E2, Piece::None);
+        default_board.place_piece(Square::E4, Piece::Pawn(Color::White));
+        default_board.place_piece(Square::C7, Piece::None);
+        default_board.place_piece(Square::C5, Piece::Pawn(Color::Black));
+        default_board.place_piece(Square::G1, Piece::None);
+        default_board.place_piece(Square::F3, Piece::Knight(Color::White));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
@@ -259,22 +239,20 @@ mod tests {
         board.can_black_queen_side_castle = false;
         board.half_move_clock = 1;
         board.full_move_number = 31;
-        board
-            .place_piece("d1", Piece::Bishop(Color::Black))
-            .unwrap();
-        board.place_piece("a2", Piece::Pawn(Color::White)).unwrap();
-        board.place_piece("b2", Piece::Pawn(Color::White)).unwrap();
-        board.place_piece("f2", Piece::King(Color::White)).unwrap();
-        board.place_piece("h2", Piece::Pawn(Color::White)).unwrap();
-        board.place_piece("d4", Piece::Pawn(Color::White)).unwrap();
-        board.place_piece("e4", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("a6", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("g6", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("b7", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("c7", Piece::Rook(Color::White)).unwrap();
-        board.place_piece("e7", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("h7", Piece::Pawn(Color::Black)).unwrap();
-        board.place_piece("f8", Piece::King(Color::Black)).unwrap();
+        board.place_piece(Square::D1, Piece::Bishop(Color::Black));
+        board.place_piece(Square::A2, Piece::Pawn(Color::White));
+        board.place_piece(Square::B2, Piece::Pawn(Color::White));
+        board.place_piece(Square::F2, Piece::King(Color::White));
+        board.place_piece(Square::H2, Piece::Pawn(Color::White));
+        board.place_piece(Square::D4, Piece::Pawn(Color::White));
+        board.place_piece(Square::E4, Piece::Pawn(Color::Black));
+        board.place_piece(Square::A6, Piece::Pawn(Color::Black));
+        board.place_piece(Square::G6, Piece::Pawn(Color::Black));
+        board.place_piece(Square::B7, Piece::Pawn(Color::Black));
+        board.place_piece(Square::C7, Piece::Rook(Color::White));
+        board.place_piece(Square::E7, Piece::Pawn(Color::Black));
+        board.place_piece(Square::H7, Piece::Pawn(Color::Black));
+        board.place_piece(Square::F8, Piece::King(Color::Black));
 
         let created_board =
             Board::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
@@ -324,7 +302,7 @@ mod tests {
         assert!(index.is_err());
         assert_eq!(
             index.err().unwrap().to_string(),
-            "invalid file provided, should be a-z"
+            "Invalid square string: -7"
         )
     }
 
@@ -333,10 +311,7 @@ mod tests {
         let field = "h";
         let index = Board::parse_en_passant_square(field);
         assert!(index.is_err());
-        assert_eq!(
-            index.err().unwrap().to_string(),
-            "failed to get rank from en passant field"
-        )
+        assert_eq!(index.err().unwrap().to_string(), "Invalid square string: h")
     }
 
     #[test]
@@ -346,7 +321,7 @@ mod tests {
         assert!(index.is_err());
         assert_eq!(
             index.err().unwrap().to_string(),
-            "failed to parse rank to a valid integer"
+            "Invalid square string: hh"
         )
     }
 }
