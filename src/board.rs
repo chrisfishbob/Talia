@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::piece::{Color, Piece};
 use crate::square::Square;
@@ -43,10 +43,10 @@ impl Default for Board {
         Self {
             board: [Piece::None; 64],
             to_move: Color::White,
-            can_white_king_side_castle: true,
-            can_white_queen_side_castle: true,
-            can_black_king_side_castle: true,
-            can_black_queen_side_castle: true,
+            can_white_king_side_castle: false,
+            can_white_queen_side_castle: false,
+            can_black_king_side_castle: false,
+            can_black_queen_side_castle: false,
             en_passant_square: None,
             half_move_clock: 0,
             full_move_number: 1,
@@ -96,7 +96,7 @@ impl Board {
                 piece_char => {
                     let piece = symbol_to_piece
                         .get(&piece_char)
-                        .ok_or(BoardError::new("Invalid piece char in FEN string"))?;
+                        .ok_or(BoardError::new("Invalid piece position char in FEN string"))?;
 
                     board[rank * 8 + file as usize] = *piece;
                     file += 1;
@@ -114,9 +114,13 @@ impl Board {
             }
         };
 
-        let mut castling_rights = Vec::new();
-        for char in fen_string_fields[2].chars() {
-            castling_rights.push(char);
+        let valid_casting_right_chars: HashSet<char> =
+            ['K', 'Q', 'k', 'q', '-'].iter().cloned().collect();
+        let castling_rights: HashSet<char> = fen_string_fields[2].chars().collect();
+        if !castling_rights.is_subset(&valid_casting_right_chars) {
+            return Err(BoardError::new(
+                "invalid castling rights in fen, must be a combination of 'K', 'Q', 'k', and 'q' or '-'",
+            ));
         }
 
         let half_move_clock: u32 = fen_string_fields[4]
@@ -125,7 +129,7 @@ impl Board {
 
         let full_move_number: u32 = fen_string_fields[5]
             .parse()
-            .map_err(|_| BoardError::new("failed to parse full move clock from fen"))?;
+            .map_err(|_| BoardError::new("failed to parse full move number from fen"))?;
 
         Ok(Self {
             board,
@@ -206,6 +210,14 @@ mod tests {
     }
 
     #[test]
+    fn test_from_fen_empty_board() {
+        let empty_board = Board::default();
+        let empty_board_from_fen = Board::from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
+
+        assert_eq!(empty_board, empty_board_from_fen);
+    }
+
+    #[test]
     fn test_from_fen_sicilian_defense() {
         let mut statring_board = Board::starting_position();
         statring_board.to_move = Color::Black;
@@ -230,10 +242,6 @@ mod tests {
     #[test]
     fn test_from_puzzle_fen() {
         let mut board = Board {
-            can_white_king_side_castle: false,
-            can_white_queen_side_castle: false,
-            can_black_king_side_castle: false,
-            can_black_queen_side_castle: false,
             half_move_clock: 1,
             full_move_number: 31,
             ..Default::default()
@@ -258,6 +266,56 @@ mod tests {
             Board::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
 
         assert_eq!(board, created_board);
+    }
+
+    #[test]
+    fn test_from_fen_invalid_piece_position_char() {
+        let board = Board::from_fen("9/8/8/8/8/8/8/8 w - - 0 1");
+
+        assert_eq!(
+            board.err().unwrap().to_string(),
+            "Invalid piece position char in FEN string"
+        )
+    }
+
+    #[test]
+    fn test_from_fen_invalid_to_move_color() {
+        let board = Board::from_fen("8/8/8/8/8/8/8/8 - - - 0 1");
+
+        assert_eq!(
+            board.err().unwrap().to_string(),
+            "failed to parse active board color, must be 'b' or 'w'."
+        )
+    }
+
+    #[test]
+    fn test_from_fen_invalid_half_move_clock() {
+        let board = Board::from_fen("8/8/8/8/8/8/8/8 w - - -1 1");
+
+        assert_eq!(
+            board.err().unwrap().to_string(),
+            "failed to parse half move clock from fen"
+        )
+    }
+
+    #[test]
+    fn test_from_fen_invalid_full_move_number() {
+        let board = Board::from_fen("8/8/8/8/8/8/8/8 w - - 1 -1");
+
+        assert_eq!(
+            board.err().unwrap().to_string(),
+            "failed to parse full move number from fen"
+        )
+    }
+
+    #[test]
+    fn test_from_fen_invalid_castling_rights() {
+        let board = Board::from_fen("8/8/8/8/8/8/8/8 w bw - 1 1");
+
+        assert_eq!(
+            board.err().unwrap().to_string(),
+            "invalid castling rights in fen, must be a combination of 'K', 'Q', 'k', and 'q' or '-'"
+        )
     }
 
     #[test]
