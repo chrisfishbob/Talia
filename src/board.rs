@@ -167,7 +167,7 @@ mod tests {
     };
 
     #[test]
-    fn test_default_board_config() {
+    fn test_starting_position_board_config() {
         let board = Board::starting_position();
         assert_eq!(board.board[Square::A1 as usize], Piece::Rook(Color::White));
         assert_eq!(board.board[Square::B1 as usize], Piece::Knight(Color::White));
