@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::piece::{Piece, Color};
+use crate::piece::{Color, Piece};
 use std::{error, fmt};
 
 #[derive(Debug, PartialEq, Eq)]
@@ -38,6 +38,20 @@ impl fmt::Display for BoardError {
 impl error::Error for BoardError {}
 
 impl Board {
+    pub fn blank_board() -> Self {
+        Self {
+            board: [Piece::None; 64],
+            to_move: Color::White,
+            can_white_king_side_castle: true,
+            can_white_queen_side_castle: true,
+            can_black_king_side_castle: true,
+            can_black_queen_side_castle: true,
+            en_passant_square: None,
+            half_move_clock: 0,
+            full_move_number: 1,
+        }
+    }
+
     pub fn default_config() -> Self {
         Self::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
             .expect("failed to construct default board config")
@@ -142,6 +156,7 @@ impl Board {
         match file_char {
             'a'..='h' => {
                 let file_num = file_char as usize - 'a' as usize;
+
                 square_chars
                     .next()
                     .ok_or_else(|| BoardError::new("failed to get rank from en passant field"))
@@ -156,11 +171,19 @@ impl Board {
             _ => Err(BoardError::new("invalid file provided, should be a-z")),
         }
     }
+
+    pub fn place_piece(&mut self, square: &str, piece: Piece) -> Result<(), BoardError> {
+        self.board[Self::index_from_algebraic(square)?] = piece;
+        Ok(())
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, piece::{Color, Piece}};
+    use crate::{
+        board::Board,
+        piece::{Color, Piece},
+    };
 
     #[test]
     fn test_default_board_config() {
@@ -225,6 +248,38 @@ mod tests {
                 .unwrap();
 
         assert_eq!(default_board, created_board)
+    }
+
+    #[test]
+    fn test_from_puzzle_fen() {
+        let mut board = Board::blank_board();
+        board.can_white_king_side_castle = false;
+        board.can_white_queen_side_castle = false;
+        board.can_black_king_side_castle = false;
+        board.can_black_queen_side_castle = false;
+        board.half_move_clock = 1;
+        board.full_move_number = 31;
+        board
+            .place_piece("d1", Piece::Bishop(Color::Black))
+            .unwrap();
+        board.place_piece("a2", Piece::Pawn(Color::White)).unwrap();
+        board.place_piece("b2", Piece::Pawn(Color::White)).unwrap();
+        board.place_piece("f2", Piece::King(Color::White)).unwrap();
+        board.place_piece("h2", Piece::Pawn(Color::White)).unwrap();
+        board.place_piece("d4", Piece::Pawn(Color::White)).unwrap();
+        board.place_piece("e4", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("a6", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("g6", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("b7", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("c7", Piece::Rook(Color::White)).unwrap();
+        board.place_piece("e7", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("h7", Piece::Pawn(Color::Black)).unwrap();
+        board.place_piece("f8", Piece::King(Color::Black)).unwrap();
+
+        let created_board =
+            Board::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
+
+        assert_eq!(board, created_board);
     }
 
     #[test]
