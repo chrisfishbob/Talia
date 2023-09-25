@@ -38,8 +38,8 @@ impl fmt::Display for BoardError {
 
 impl error::Error for BoardError {}
 
-impl Board {
-    pub fn blank_board() -> Self {
+impl Default for Board {
+    fn default() -> Self {
         Self {
             board: [Piece::None; 64],
             to_move: Color::White,
@@ -52,8 +52,9 @@ impl Board {
             full_move_number: 1,
         }
     }
-
-    pub fn default_config() -> Self {
+}
+impl Board {
+    pub fn starting_position() -> Self {
         Self::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
             .expect("failed to construct default board config")
     }
@@ -163,7 +164,7 @@ mod tests {
 
     #[test]
     fn test_default_board_config() {
-        let board = Board::default_config();
+        let board = Board::starting_position();
         assert_eq!(board.board[Square::A1 as usize], Piece::Rook(Color::White));
         assert_eq!(
             board.board[Square::B1 as usize],
@@ -230,7 +231,7 @@ mod tests {
 
     #[test]
     fn test_from_fen_sicilian_defense() {
-        let mut default_board = Board::default_config();
+        let mut default_board = Board::starting_position();
         default_board.to_move = Color::Black;
         default_board.half_move_clock = 1;
         default_board.full_move_number = 2;
@@ -252,13 +253,16 @@ mod tests {
 
     #[test]
     fn test_from_puzzle_fen() {
-        let mut board = Board::blank_board();
-        board.can_white_king_side_castle = false;
-        board.can_white_queen_side_castle = false;
-        board.can_black_king_side_castle = false;
-        board.can_black_queen_side_castle = false;
-        board.half_move_clock = 1;
-        board.full_move_number = 31;
+        let mut board = Board {
+            can_white_king_side_castle: false,
+            can_white_queen_side_castle: false,
+            can_black_king_side_castle: false,
+            can_black_queen_side_castle: false,
+            half_move_clock: 1,
+            full_move_number: 31,
+            ..Default::default()
+        };
+
         board.place_piece(Square::D1, Piece::Bishop(Color::Black));
         board.place_piece(Square::A2, Piece::Pawn(Color::White));
         board.place_piece(Square::B2, Piece::Pawn(Color::White));
