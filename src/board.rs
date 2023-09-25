@@ -152,10 +152,6 @@ impl Board {
     pub fn place_piece(&mut self, square: Square, piece: Piece) {
         self.board[square as usize] = piece;
     }
-
-    pub fn piece_at(&mut self, square: Square) -> &mut Piece {
-        &mut self.board[square as usize]
-    }
 }
 
 #[cfg(test)]
