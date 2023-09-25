@@ -231,24 +231,24 @@ mod tests {
 
     #[test]
     fn test_from_fen_sicilian_defense() {
-        let mut default_board = Board::starting_position();
-        default_board.to_move = Color::Black;
-        default_board.half_move_clock = 1;
-        default_board.full_move_number = 2;
-        default_board.place_piece(Square::E2, Piece::None);
-        default_board.place_piece(Square::E2, Piece::None);
-        default_board.place_piece(Square::E4, Piece::Pawn(Color::White));
-        default_board.place_piece(Square::C7, Piece::None);
-        default_board.place_piece(Square::C5, Piece::Pawn(Color::Black));
-        default_board.place_piece(Square::G1, Piece::None);
-        default_board.place_piece(Square::F3, Piece::Knight(Color::White));
+        let mut statring_board = Board::starting_position();
+        statring_board.to_move = Color::Black;
+        statring_board.half_move_clock = 1;
+        statring_board.full_move_number = 2;
+        statring_board.place_piece(Square::E2, Piece::None);
+        statring_board.place_piece(Square::E2, Piece::None);
+        statring_board.place_piece(Square::E4, Piece::Pawn(Color::White));
+        statring_board.place_piece(Square::C7, Piece::None);
+        statring_board.place_piece(Square::C5, Piece::Pawn(Color::Black));
+        statring_board.place_piece(Square::G1, Piece::None);
+        statring_board.place_piece(Square::F3, Piece::Knight(Color::White));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
             Board::from_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
                 .unwrap();
 
-        assert_eq!(default_board, created_board)
+        assert_eq!(statring_board, created_board)
     }
 
     #[test]
