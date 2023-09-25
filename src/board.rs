@@ -164,14 +164,26 @@ mod tests {
     #[test]
     fn test_default_board_config() {
         let board = Board::default_config();
-        assert_eq!(board.board[0], Piece::Rook(Color::White));
-        assert_eq!(board.board[1], Piece::Knight(Color::White));
-        assert_eq!(board.board[2], Piece::Bishop(Color::White));
-        assert_eq!(board.board[3], Piece::Queen(Color::White));
-        assert_eq!(board.board[4], Piece::King(Color::White));
-        assert_eq!(board.board[5], Piece::Bishop(Color::White));
-        assert_eq!(board.board[6], Piece::Knight(Color::White));
-        assert_eq!(board.board[7], Piece::Rook(Color::White));
+        assert_eq!(board.board[Square::A1 as usize], Piece::Rook(Color::White));
+        assert_eq!(
+            board.board[Square::B1 as usize],
+            Piece::Knight(Color::White)
+        );
+        assert_eq!(
+            board.board[Square::C1 as usize],
+            Piece::Bishop(Color::White)
+        );
+        assert_eq!(board.board[Square::D1 as usize], Piece::Queen(Color::White));
+        assert_eq!(board.board[Square::E1 as usize], Piece::King(Color::White));
+        assert_eq!(
+            board.board[Square::F1 as usize],
+            Piece::Bishop(Color::White)
+        );
+        assert_eq!(
+            board.board[Square::G1 as usize],
+            Piece::Knight(Color::White)
+        );
+        assert_eq!(board.board[Square::H1 as usize], Piece::Rook(Color::White));
 
         for i in 8..=15 {
             assert_eq!(board.board[i], Piece::Pawn(Color::White));
@@ -185,14 +197,26 @@ mod tests {
             assert_eq!(board.board[i], Piece::Pawn(Color::Black));
         }
 
-        assert_eq!(board.board[56], Piece::Rook(Color::Black));
-        assert_eq!(board.board[57], Piece::Knight(Color::Black));
-        assert_eq!(board.board[58], Piece::Bishop(Color::Black));
-        assert_eq!(board.board[59], Piece::Queen(Color::Black));
-        assert_eq!(board.board[60], Piece::King(Color::Black));
-        assert_eq!(board.board[61], Piece::Bishop(Color::Black));
-        assert_eq!(board.board[62], Piece::Knight(Color::Black));
-        assert_eq!(board.board[63], Piece::Rook(Color::Black));
+        assert_eq!(board.board[Square::A8 as usize], Piece::Rook(Color::Black));
+        assert_eq!(
+            board.board[Square::B8 as usize],
+            Piece::Knight(Color::Black)
+        );
+        assert_eq!(
+            board.board[Square::C8 as usize],
+            Piece::Bishop(Color::Black)
+        );
+        assert_eq!(board.board[Square::D8 as usize], Piece::Queen(Color::Black));
+        assert_eq!(board.board[Square::E8 as usize], Piece::King(Color::Black));
+        assert_eq!(
+            board.board[Square::F8 as usize],
+            Piece::Bishop(Color::Black)
+        );
+        assert_eq!(
+            board.board[Square::G8 as usize],
+            Piece::Knight(Color::Black)
+        );
+        assert_eq!(board.board[Square::H8 as usize], Piece::Rook(Color::Black));
 
         assert_eq!(board.to_move, Color::White);
         assert_eq!(board.en_passant_square, None);
