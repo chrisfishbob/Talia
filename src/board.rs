@@ -54,7 +54,7 @@ impl Default for Board {
     }
 }
 
-impl fmt::Debug for Board {
+impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let board_vec: Vec<Vec<char>> = self
             .squares
@@ -63,7 +63,7 @@ impl fmt::Debug for Board {
             .map(|rank| {
                 rank.iter()
                     .map(|c| match c {
-                        Some(piece) => format!("{:?}", piece).chars().next().unwrap(),
+                        Some(piece) => format!("{piece}").chars().next().unwrap(),
                         None => ' ',
                     })
                     .collect()
@@ -78,6 +78,12 @@ impl fmt::Debug for Board {
 
         writeln!(f, "     A    B    C    D    E    F    G    H\n")?;
         writeln!(f, "{:?} to move.", self.to_move)
+    }
+}
+
+impl fmt::Debug for Board {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 

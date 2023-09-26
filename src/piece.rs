@@ -16,7 +16,7 @@ pub enum PieceKind {
     King,
 }
 
-impl fmt::Debug for Piece {
+impl fmt::Display for Piece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match (self.piece_kind, self.color) {
             (PieceKind::Pawn, Color::White) => write!(f, "P"),
@@ -32,6 +32,12 @@ impl fmt::Debug for Piece {
             (PieceKind::King, Color::White) => write!(f, "K"),
             (PieceKind::King, Color::Black) => write!(f, "k"),
         }
+    }
+}
+
+impl fmt::Debug for Piece {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self)
     }
 }
 
