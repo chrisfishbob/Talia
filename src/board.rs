@@ -33,7 +33,7 @@ pub struct Board {
     can_black_king_side_castle: bool,
     can_white_queen_side_castle: bool,
     can_black_queen_side_castle: bool,
-    en_passant_square: Option<usize>,
+    en_passant_square: Option<Square>,
     half_move_clock: u32,
     full_move_number: u32,
 }
@@ -83,7 +83,17 @@ impl fmt::Display for Board {
 
 impl fmt::Debug for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
+        write!(f, "{}", self)?;
+        match &self.en_passant_square {
+            Some(square) => writeln!(f, "en passant square: {:?}", square)?,
+            None => writeln!(f, "no en passant square")?,
+        };
+        writeln!(f, "Can white king side castle: {}", self.can_white_king_side_castle)?;
+        writeln!(f, "Can white queen side castle: {}", self.can_white_king_side_castle)?;
+        writeln!(f, "Can black king side castle: {}", self.can_black_king_side_castle)?;
+        writeln!(f, "Can black queen side castle: {}", self.can_black_king_side_castle)?;
+        writeln!(f, "half move clock: {}", self.half_move_clock)?;
+        writeln!(f, "full move number: {}", self.full_move_number)
     }
 }
 
@@ -178,13 +188,13 @@ impl Board {
         })
     }
 
-    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>, BoardError> {
+    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<Square>, BoardError> {
         if en_passant_sqaure_field == "-" {
             return Ok(None);
         }
 
         Ok(Some(
-            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize
+            Square::from_algebraic_notation(en_passant_sqaure_field)?
         ))
     }
 
@@ -301,24 +311,23 @@ mod tests {
 
     #[test]
     fn test_from_fen_sicilian_defense() {
-        let mut statring_board = Board::starting_position();
-        statring_board.to_move = Color::Black;
-        statring_board.half_move_clock = 1;
-        statring_board.full_move_number = 2;
-        statring_board.set_square(Square::E2, None);
-        statring_board.set_square(Square::E2, None);
-        statring_board.set_square(Square::E4, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        statring_board.set_square(Square::C7, None);
-        statring_board.set_square(Square::C5, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        statring_board.set_square(Square::G1, None);
-        statring_board.set_square(Square::F3, Some(Piece::new(PieceKind::Knight, Color::White)));
+        let mut starting_board = Board::starting_position();
+        starting_board.to_move = Color::Black;
+        starting_board.half_move_clock = 1;
+        starting_board.full_move_number = 2;
+        starting_board.set_square(Square::E2, None);
+        starting_board.set_square(Square::E4, Some(Piece::new(PieceKind::Pawn, Color::White)));
+        starting_board.set_square(Square::C7, None);
+        starting_board.set_square(Square::C5, Some(Piece::new(PieceKind::Pawn, Color::Black)));
+        starting_board.set_square(Square::G1, None);
+        starting_board.set_square(Square::F3, Some(Piece::new(PieceKind::Knight, Color::White)));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
             Board::from_fen("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
                 .unwrap();
 
-        assert_eq!(statring_board, created_board)
+        assert_eq!(starting_board, created_board)
     }
 
     #[test]
@@ -411,28 +420,28 @@ mod tests {
     fn test_parse_en_passant_square_a1() {
         let field = "a1";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(0));
+        assert_eq!(index.unwrap(), Some(Square::A1));
     }
 
     #[test]
     fn test_parse_en_passant_square_e4() {
         let field = "e4";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(28));
+        assert_eq!(index.unwrap(), Some(Square::E4));
     }
 
     #[test]
     fn test_parse_en_passant_square_f7() {
         let field = "f7";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(53));
+        assert_eq!(index.unwrap(), Some(Square::F7));
     }
 
     #[test]
     fn test_parse_en_passant_square_h8() {
         let field = "h8";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(63));
+        assert_eq!(index.unwrap(), Some(Square::H8));
     }
 
     #[test]
