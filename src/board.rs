@@ -205,6 +205,12 @@ impl Board {
         let starting_piece = self.squares[mv.starting_square as usize];
         self.squares[mv.target_square as usize] = starting_piece;
         self.squares[mv.starting_square as usize] = None;
+
+        if let Color::White = self.to_move {
+            self.to_move = Color::Black;
+        } else {
+            self.to_move = Color::White;
+        }
     }
 
     pub fn set_square(&mut self, square: Square, piece: Option<Piece>) {
@@ -322,7 +328,6 @@ mod tests {
     #[test]
     fn test_from_fen_sicilian_defense() {
         let mut starting_board = Board::starting_position();
-        starting_board.to_move = Color::Black;
         starting_board.half_move_clock = 1;
         starting_board.full_move_number = 2;
         starting_board.move_piece(Move::new(Square::E2, Square::E4));
