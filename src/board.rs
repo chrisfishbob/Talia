@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use crate::move_generation::Move;
-use crate::piece::{Color, Piece, PieceKind};
+use crate::piece::{Color, Piece};
 use crate::square::Square;
 use std::{error, fmt};
 
@@ -113,20 +113,6 @@ impl Board {
         // 5: Fullmove number
         let fen_string_fields: Vec<&str> = fen.split_whitespace().collect();
 
-        let mut symbol_to_piece = HashMap::new();
-        symbol_to_piece.insert('k', Piece::new(PieceKind::King, Color::Black));
-        symbol_to_piece.insert('q', Piece::new(PieceKind::Queen, Color::Black));
-        symbol_to_piece.insert('r', Piece::new(PieceKind::Rook, Color::Black));
-        symbol_to_piece.insert('n', Piece::new(PieceKind::Knight, Color::Black));
-        symbol_to_piece.insert('b', Piece::new(PieceKind::Bishop, Color::Black));
-        symbol_to_piece.insert('p', Piece::new(PieceKind::Pawn, Color::Black));
-        symbol_to_piece.insert('K', Piece::new(PieceKind::King, Color::White));
-        symbol_to_piece.insert('Q', Piece::new(PieceKind::Queen, Color::White));
-        symbol_to_piece.insert('R', Piece::new(PieceKind::Rook, Color::White));
-        symbol_to_piece.insert('N', Piece::new(PieceKind::Knight, Color::White));
-        symbol_to_piece.insert('B', Piece::new(PieceKind::Bishop, Color::White));
-        symbol_to_piece.insert('P', Piece::new(PieceKind::Pawn, Color::White));
-
         let mut board: [Option<Piece>; 64] = [None; 64];
         let mut file = 0;
         let mut rank = 7;
@@ -139,11 +125,9 @@ impl Board {
                 }
                 '1'..='8' => file += symbol.to_digit(10).unwrap(),
                 piece_char => {
-                    let piece = symbol_to_piece
-                        .get(&piece_char)
-                        .ok_or(BoardError::new("Invalid piece position char in FEN string"))?;
-
-                    board[rank * 8 + file as usize] = Some(*piece);
+                    let piece = Piece::from_symbol(piece_char)
+                        .ok_or(BoardError::new("invalid piece symbol in FEN"))?;
+                    board[rank * 8 + file as usize] = Some(piece);
                     file += 1;
                 }
             }
@@ -375,10 +359,7 @@ mod tests {
     fn test_from_fen_invalid_piece_position_char() {
         let board = Board::from_fen("9/8/8/8/8/8/8/8 w - - 0 1");
 
-        assert_eq!(
-            board.err().unwrap().to_string(),
-            "Invalid piece position char in FEN string"
-        )
+        assert_eq!(board.err().unwrap().to_string(), "invalid piece symbol in FEN")
     }
 
     #[test]
