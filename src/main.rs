@@ -13,5 +13,5 @@ fn main() {
     board.move_piece(Move::new(Square::G1, Square::F3));
     board.move_piece(Move::new(Square::B8, Square::C6));
     println!("Talia Chess Engine: v0.0.1");
-    println!("{board}")
+    println!("{board}");
 }

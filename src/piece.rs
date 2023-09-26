@@ -63,6 +63,23 @@ impl Piece {
             _ => None,
         }
     }
+
+    pub fn to_symbol(&self) -> char {
+        match (self.piece_kind, self.color) {
+            (PieceKind::Pawn, Color::White) => 'P',
+            (PieceKind::Pawn, Color::Black) => 'p',
+            (PieceKind::Knight, Color::White) => 'N',
+            (PieceKind::Knight, Color::Black) => 'n',
+            (PieceKind::Bishop, Color::White) => 'B',
+            (PieceKind::Bishop, Color::Black) => 'b',
+            (PieceKind::Rook, Color::White) => 'R',
+            (PieceKind::Rook, Color::Black) => 'r',
+            (PieceKind::Queen, Color::White) => 'Q',
+            (PieceKind::Queen, Color::Black) => 'q',
+            (PieceKind::King, Color::White) => 'K',
+            (PieceKind::King, Color::Black) => 'k',
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
