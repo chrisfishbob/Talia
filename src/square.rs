@@ -1,6 +1,6 @@
 use crate::board::BoardError;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Square {
     A1 = 0,
     B1 = 1,

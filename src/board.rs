@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use crate::move_generation::Move;
 use crate::piece::{Color, Piece, PieceKind};
 use crate::square::Square;
 use std::{error, fmt};
@@ -188,14 +189,22 @@ impl Board {
         })
     }
 
-    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<Square>, BoardError> {
+    fn parse_en_passant_square(
+        en_passant_sqaure_field: &str,
+    ) -> Result<Option<Square>, BoardError> {
         if en_passant_sqaure_field == "-" {
             return Ok(None);
         }
 
-        Ok(Some(
-            Square::from_algebraic_notation(en_passant_sqaure_field)?
-        ))
+        Ok(Some(Square::from_algebraic_notation(en_passant_sqaure_field)?))
+    }
+
+    // TODO: Should this return an error?
+    // TODO: Handle en passant, castling, promotion, ...
+    pub fn move_piece(&mut self, mv: Move) {
+        let starting_piece = self.squares[mv.starting_square as usize];
+        self.squares[mv.target_square as usize] = starting_piece;
+        self.squares[mv.starting_square as usize] = None;
     }
 
     pub fn set_square(&mut self, square: Square, piece: Option<Piece>) {
@@ -207,6 +216,7 @@ impl Board {
 mod tests {
     use crate::{
         board::{Board, Square},
+        move_generation::Move,
         piece::{Color, Piece, PieceKind},
     };
 
@@ -315,12 +325,9 @@ mod tests {
         starting_board.to_move = Color::Black;
         starting_board.half_move_clock = 1;
         starting_board.full_move_number = 2;
-        starting_board.set_square(Square::E2, None);
-        starting_board.set_square(Square::E4, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        starting_board.set_square(Square::C7, None);
-        starting_board.set_square(Square::C5, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        starting_board.set_square(Square::G1, None);
-        starting_board.set_square(Square::F3, Some(Piece::new(PieceKind::Knight, Color::White)));
+        starting_board.move_piece(Move::new(Square::E2, Square::E4));
+        starting_board.move_piece(Move::new(Square::C7, Square::C5));
+        starting_board.move_piece(Move::new(Square::G1, Square::F3));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
