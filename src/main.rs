@@ -1,6 +1,7 @@
 pub mod board;
 pub mod piece;
 pub mod square;
+pub mod move_generation;
 use crate::board::Board;
 
 fn main() {
