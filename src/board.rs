@@ -4,19 +4,6 @@ use crate::piece::{Color, Piece};
 use crate::square::Square;
 use std::{error, fmt};
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Board {
-    board: [Piece; 64],
-    to_move: Color,
-    can_white_king_side_castle: bool,
-    can_black_king_side_castle: bool,
-    can_white_queen_side_castle: bool,
-    can_black_queen_side_castle: bool,
-    en_passant_square: Option<usize>,
-    half_move_clock: u32,
-    full_move_number: u32,
-}
-
 #[derive(Debug, Clone)]
 pub struct BoardError {
     message: String,
@@ -38,6 +25,19 @@ impl fmt::Display for BoardError {
 
 impl error::Error for BoardError {}
 
+#[derive(PartialEq, Eq)]
+pub struct Board {
+    board: [Piece; 64],
+    to_move: Color,
+    can_white_king_side_castle: bool,
+    can_black_king_side_castle: bool,
+    can_white_queen_side_castle: bool,
+    can_black_queen_side_castle: bool,
+    en_passant_square: Option<usize>,
+    half_move_clock: u32,
+    full_move_number: u32,
+}
+
 impl Default for Board {
     fn default() -> Self {
         Self {
@@ -53,6 +53,25 @@ impl Default for Board {
         }
     }
 }
+
+impl fmt::Debug for Board {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut board_vec: Vec<Vec<Piece>> = Vec::new();
+        for rank in self.board.chunks(8) {
+            board_vec.insert(0, rank.to_vec());
+        }
+
+        writeln!(f)?;
+        for (i, rank) in board_vec.iter().enumerate() {
+            let rank_num = 8 - i; 
+            writeln!(f, "{rank_num}  {:?}", rank)?;
+        }
+
+        writeln!(f, "\n    A  B  C  D  E  F  G  H\n")?;
+        writeln!(f, "{:?} to move.", self.to_move)
+    }
+}
+
 impl Board {
     pub fn starting_position() -> Self {
         Self::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
