@@ -6,6 +6,7 @@ use crate::board::Board;
 use crate::square::Square;
 use crate::move_generation::Move;
 
+
 fn main() {
     let mut board = Board::starting_position();
     board.move_piece(Move::new(Square::E2, Square::E4));
