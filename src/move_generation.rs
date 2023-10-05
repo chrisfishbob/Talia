@@ -1,10 +1,12 @@
 #![allow(unused)]
 use core::fmt;
+use std::collections::HashSet;
 
 use crate::board::Board;
 use crate::piece::{Piece, PieceKind};
 use crate::square::Square;
 
+#[derive(Eq, PartialEq, Hash)]
 pub struct Move {
     pub starting_square: usize,
     pub target_square: usize,
@@ -152,6 +154,7 @@ mod tests {
     use crate::move_generation::{MoveGenerator, Move};
     use crate::square::Square;
     use crate::piece::Color;
+    use std::collections::HashSet;
 
     #[test]
     fn test_num_squares_to_edge() {
@@ -214,5 +217,77 @@ mod tests {
         move_generator.generate_sliding_moves(Square::F8 as usize);
         move_generator.generate_sliding_moves(Square::H8 as usize);
         assert_eq!(move_generator.moves.len(), 0);
+    }
+
+    #[test]
+    fn test_generate_sliding_moves_from_e4_e5() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.board.move_piece(Move::from_square(Square::E2, Square::E4));
+        move_generator.board.move_piece(Move::from_square(Square::E7, Square::E5));
+
+        move_generator.generate_sliding_moves(Square::A1 as usize);
+        move_generator.generate_sliding_moves(Square::C1 as usize);
+        move_generator.generate_sliding_moves(Square::D1 as usize);
+        move_generator.generate_sliding_moves(Square::F1 as usize);
+        move_generator.generate_sliding_moves(Square::H1 as usize);
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D1, Square::E2)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D1, Square::F3)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D1, Square::G4)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D1, Square::H5)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::E2)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::D3)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::C4)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::B5)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::A6)));
+        assert_eq!(move_generator.moves.len(), 9);
+    }
+
+    #[test]
+    fn test_generate_sliding_moves_from_e4_e5_nf3() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.board.move_piece(Move::from_square(Square::E2, Square::E4));
+        move_generator.board.move_piece(Move::from_square(Square::E7, Square::E5));
+        move_generator.board.move_piece(Move::from_square(Square::G1, Square::F3));
+        // TODO: Remove this when move_piece handles this
+        move_generator.board.to_move = Color::Black;
+
+        move_generator.generate_sliding_moves(Square::A8 as usize);
+        move_generator.generate_sliding_moves(Square::C8 as usize);
+        move_generator.generate_sliding_moves(Square::D8 as usize);
+        move_generator.generate_sliding_moves(Square::F8 as usize);
+        move_generator.generate_sliding_moves(Square::H8 as usize);
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D8, Square::E7)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D8, Square::F6)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D8, Square::G5)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D8, Square::H4)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F8, Square::E7)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F8, Square::D6)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F8, Square::C5)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F8, Square::B4)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F8, Square::A3)));
+        assert_eq!(move_generator.moves.len(), 9);
+    }
+
+    #[test]
+    fn test_generate_sliding_moves_from_e4_e5_nf3_nc6() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.board.move_piece(Move::from_square(Square::E2, Square::E4));
+        move_generator.board.move_piece(Move::from_square(Square::E7, Square::E5));
+        move_generator.board.move_piece(Move::from_square(Square::G1, Square::F3));
+        move_generator.board.move_piece(Move::from_square(Square::B8, Square::C6));
+
+        move_generator.generate_sliding_moves(Square::A1 as usize);
+        move_generator.generate_sliding_moves(Square::C1 as usize);
+        move_generator.generate_sliding_moves(Square::D1 as usize);
+        move_generator.generate_sliding_moves(Square::F1 as usize);
+        move_generator.generate_sliding_moves(Square::H1 as usize);
+        assert!(move_generator.moves.contains(&Move::from_square(Square::D1, Square::E2)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::E2)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::D3)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::C4)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::B5)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::F1, Square::A6)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::H1, Square::G1)));
+        assert_eq!(move_generator.moves.len(), 7);
     }
 }
