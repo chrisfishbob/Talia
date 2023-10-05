@@ -44,6 +44,12 @@ pub struct MoveGenerator {
     board: Board,
 }
 
+impl Default for MoveGenerator {
+    fn default() -> Self {
+        Self::new(Board::starting_position())
+    }
+}
+
 impl MoveGenerator {
     pub fn new(board: Board) -> Self {
         Self {
@@ -66,14 +72,15 @@ impl MoveGenerator {
 
             let piece = piece.expect("Piece should not be None");
             if piece.is_sliding_piece() {
-                self.generate_sliding_moves(square, piece);
+                self.generate_sliding_moves(square);
             }
         }
 
         moves
     }
 
-    fn generate_sliding_moves(&mut self, start_square: usize, piece: Piece) {
+    fn generate_sliding_moves(&mut self, start_square: usize) {
+        let piece = self.board.squares[start_square].expect("should not be generating sliding moves from unoccupied square");
         let start_direction_index = if piece.piece_kind == PieceKind::Bishop {
             4
         } else {
@@ -142,13 +149,13 @@ impl MoveGenerator {
 #[cfg(test)]
 mod tests {
     use crate::board::Board;
-    use crate::move_generation::MoveGenerator;
+    use crate::move_generation::{MoveGenerator, Move};
     use crate::square::Square;
+    use crate::piece::Color;
 
     #[test]
     fn test_num_squares_to_edge() {
-        let board = Board::default();
-        let move_generator: MoveGenerator = MoveGenerator::new(board);
+        let move_generator = MoveGenerator::default();
         // North
         assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][0], 7);
         assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][0], 4);
@@ -181,5 +188,30 @@ mod tests {
         assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][7], 0);
         assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][7], 3);
         assert_eq!(move_generator.num_squares_to_edge[Square::H8 as usize][7], 7);
+    }
+
+    #[test]
+    fn test_generate_sliding_moves_empty_white() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.generate_sliding_moves(Square::A1 as usize);
+        move_generator.generate_sliding_moves(Square::C1 as usize);
+        move_generator.generate_sliding_moves(Square::D1 as usize);
+        move_generator.generate_sliding_moves(Square::F1 as usize);
+        move_generator.generate_sliding_moves(Square::H1 as usize);
+        assert_eq!(move_generator.moves.len(), 0);
+    }
+
+    fn test_generate_sliding_moves_empty_black() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.board.move_piece(Move::from_square(Square::E2, Square::E4));
+        // TODO: Remove this when move_piece handles this
+        move_generator.board.to_move = Color::Black;
+
+        move_generator.generate_sliding_moves(Square::A8 as usize);
+        move_generator.generate_sliding_moves(Square::C8 as usize);
+        move_generator.generate_sliding_moves(Square::D8 as usize);
+        move_generator.generate_sliding_moves(Square::F8 as usize);
+        move_generator.generate_sliding_moves(Square::H8 as usize);
+        assert_eq!(move_generator.moves.len(), 0);
     }
 }
