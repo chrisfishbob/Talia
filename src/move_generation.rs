@@ -1,39 +1,94 @@
 #![allow(unused)]
 use crate::board::Board;
+use crate::piece::{Piece, PieceKind};
 use crate::square::Square;
 
+#[derive(Debug, PartialEq)]
 pub struct Move {
-    pub starting_square: Square,
-    pub target_square: Square,
+    pub starting_square: usize,
+    pub target_square: usize,
 }
 
 impl Move {
-    pub fn new(starting_square: Square, target_square: Square) -> Self {
+    pub fn new(starting_square: usize, target_square: usize) -> Self {
         Self {
             starting_square,
             target_square,
         }
     }
-}
 
-struct MoveGenerator {
-    num_squares_to_edge: [[usize; 8]; 64],
-    direction_offsets: [i32; 8],
-}
-
-impl Default for MoveGenerator {
-    fn default() -> Self {
-        MoveGenerator {
-            direction_offsets: [8, -8, -1, 1, 7, -7, 9, -9],
-            num_squares_to_edge: Self::precompute_move_data(),
+    pub fn from_square(starting_square: Square, target_square: Square) -> Self {
+        Self {
+            starting_square: starting_square as usize,
+            target_square: target_square as usize
         }
     }
 }
 
+pub struct MoveGenerator {
+    num_squares_to_edge: [[usize; 8]; 64],
+    direction_offsets: [isize; 8],
+    pub moves: Vec<Move>,
+    board: Board,
+}
+
 impl MoveGenerator {
-    fn generate_moves(board: Board) -> Vec<Move> {
+    pub fn new(board: Board) -> Self {
+        Self {
+            direction_offsets: [8, -8, -1, 1, 7, -7, 9, -9],
+            num_squares_to_edge: Self::precompute_move_data(),
+            moves: Vec::new(),
+            board,
+        }
+    }
+
+    pub fn generate_moves(&mut self) -> Vec<Move> {
         let moves: Vec<Move> = Vec::new();
+
+        for square in 0..64 {
+            let piece = self.board.squares[square];
+            // TODO: There is probably something more idiomatic here
+            if piece.is_none() || piece.unwrap().color != self.board.to_move {
+                continue;
+            }
+
+            let piece = piece.expect("Piece should not be None");
+            if piece.is_sliding_piece() {
+                self.generate_sliding_moves(square, piece);
+            }
+        }
+
         moves
+    }
+
+    fn generate_sliding_moves(&mut self, start_square: usize, piece: Piece) {
+        let start_direction_index = if piece.piece_kind == PieceKind::Bishop { 4 } else { 0 };
+        let end_direction_index = if piece.piece_kind == PieceKind::Rook { 4 } else { 8 };
+
+        for direction_index in start_direction_index..end_direction_index {
+            for n in 0..self.num_squares_to_edge[start_square][direction_index] {
+                let target_square = start_square as isize
+                    + self.direction_offsets[direction_index] * (n as isize + 1);
+                let target_square = target_square as usize;
+                let piece_on_target_square = self.board.squares[target_square];
+
+                match piece_on_target_square {
+                    Some(Piece { piece_kind, color }) => {
+                        // If the piece is the opponent's color, then the capture is legal
+                        // but stop here.
+                        if color != self.board.to_move {
+                            self.moves.push(Move::new(start_square, target_square));
+                        }
+                        // Blocked by friendly piece, cannot go on further.
+                        break;
+                    }
+                    None => {
+                        // No piece on the current square, keep generating moves
+                        self.moves.push(Move::new(start_square, target_square));
+                    }
+                }
+            }
+        }
     }
 
     fn precompute_move_data() -> [[usize; 8]; 64] {
@@ -68,10 +123,12 @@ impl MoveGenerator {
 mod tests {
     use crate::move_generation::MoveGenerator;
     use crate::square::Square;
+    use crate::board::Board;
 
     #[test]
     fn test_num_squares_to_edge() {
-        let move_generator: MoveGenerator = MoveGenerator::default();
+        let board = Board::default();
+        let move_generator: MoveGenerator = MoveGenerator::new(board);
         // North
         assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][0], 7);
         assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][0], 4);

@@ -2,8 +2,8 @@ use core::fmt;
 
 #[derive(Copy, Clone, PartialEq, Eq)]
 pub struct Piece {
-    piece_kind: PieceKind,
-    color: Color,
+    pub piece_kind: PieceKind,
+    pub color: Color,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -79,6 +79,10 @@ impl Piece {
             (PieceKind::King, Color::White) => 'K',
             (PieceKind::King, Color::Black) => 'k',
         }
+    }
+
+    pub fn is_sliding_piece(&self) -> bool {
+        matches!(self.piece_kind, PieceKind::Queen | PieceKind::Rook | PieceKind::Bishop)
     }
 }
 

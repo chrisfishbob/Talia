@@ -28,15 +28,15 @@ impl error::Error for BoardError {}
 
 #[derive(PartialEq, Eq)]
 pub struct Board {
-    squares: [Option<Piece>; 64],
-    to_move: Color,
-    can_white_king_side_castle: bool,
-    can_black_king_side_castle: bool,
-    can_white_queen_side_castle: bool,
-    can_black_queen_side_castle: bool,
-    en_passant_square: Option<Square>,
-    half_move_clock: u32,
-    full_move_number: u32,
+    pub squares: [Option<Piece>; 64],
+    pub to_move: Color,
+    pub can_white_king_side_castle: bool,
+    pub can_black_king_side_castle: bool,
+    pub can_white_queen_side_castle: bool,
+    pub can_black_queen_side_castle: bool,
+    pub en_passant_square: Option<usize>,
+    pub half_move_clock: u32,
+    pub full_move_number: u32,
 }
 
 impl Default for Board {
@@ -230,7 +230,16 @@ impl Board {
         fen.push(' ');
         match self.en_passant_square {
             None => fen.push('-'),
-            Some(square) => fen.push_str(square.to_algebraic_notation()),
+            Some(square) => {
+                let square_names = [
+                    "a1", "b1", "c1", "d1", "e1", "f1", "g1", "h1", "a2", "b2", "c2", "d2", "e2",
+                    "f2", "g2", "h2", "a3", "b3", "c3", "d3", "e3", "f3", "g3", "h3", "a4", "b4",
+                    "c4", "d4", "e4", "f4", "g4", "h4", "a5", "b5", "c5", "d5", "e5", "f5", "g5",
+                    "h5", "a6", "b6", "c6", "d6", "e6", "f6", "g6", "h6", "a7", "b7", "c7", "d7",
+                    "e7", "f7", "g7", "h7", "a8", "b8", "c8", "d8", "e8", "f8", "g8", "h8",
+                ];
+                fen.push_str(square_names[square]);
+            }
         }
 
         fen.push(' ');
@@ -242,14 +251,14 @@ impl Board {
         fen
     }
 
-    fn parse_en_passant_square(
-        en_passant_sqaure_field: &str,
-    ) -> Result<Option<Square>, BoardError> {
+    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>, BoardError> {
         if en_passant_sqaure_field == "-" {
             return Ok(None);
         }
 
-        Ok(Some(Square::from_algebraic_notation(en_passant_sqaure_field)?))
+        Ok(Some(
+            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize
+        ))
     }
 
     // TODO: Should this return an error?
@@ -385,9 +394,9 @@ mod tests {
         // TODO: Remove this manual value set when move increment in implemented
         starting_board.half_move_clock = 1;
         starting_board.full_move_number = 2;
-        starting_board.move_piece(Move::new(Square::E2, Square::E4));
-        starting_board.move_piece(Move::new(Square::C7, Square::C5));
-        starting_board.move_piece(Move::new(Square::G1, Square::F3));
+        starting_board.move_piece(Move::from_square(Square::E2, Square::E4));
+        starting_board.move_piece(Move::from_square(Square::C7, Square::C5));
+        starting_board.move_piece(Move::from_square(Square::G1, Square::F3));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
@@ -484,28 +493,28 @@ mod tests {
     fn test_parse_en_passant_square_a1() {
         let field = "a1";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(Square::A1));
+        assert_eq!(index.unwrap(), Some(Square::A1 as usize));
     }
 
     #[test]
     fn test_parse_en_passant_square_e4() {
         let field = "e4";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(Square::E4));
+        assert_eq!(index.unwrap(), Some(Square::E4 as usize));
     }
 
     #[test]
     fn test_parse_en_passant_square_f7() {
         let field = "f7";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(Square::F7));
+        assert_eq!(index.unwrap(), Some(Square::F7 as usize));
     }
 
     #[test]
     fn test_parse_en_passant_square_h8() {
         let field = "h8";
         let index = Board::parse_en_passant_square(field);
-        assert_eq!(index.unwrap(), Some(Square::H8));
+        assert_eq!(index.unwrap(), Some(Square::H8 as usize));
     }
 
     #[test]
@@ -551,11 +560,11 @@ mod tests {
     fn test_to_fen_italian_game() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::new(Square::E2, Square::E4));
-        board.move_piece(Move::new(Square::E7, Square::E5));
-        board.move_piece(Move::new(Square::G1, Square::F3));
-        board.move_piece(Move::new(Square::B8, Square::C6));
-        board.move_piece(Move::new(Square::F1, Square::C4));
+        board.move_piece(Move::from_square(Square::E2, Square::E4));
+        board.move_piece(Move::from_square(Square::E7, Square::E5));
+        board.move_piece(Move::from_square(Square::G1, Square::F3));
+        board.move_piece(Move::from_square(Square::B8, Square::C6));
+        board.move_piece(Move::from_square(Square::F1, Square::C4));
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 3;
         board.full_move_number = 3;
@@ -570,17 +579,17 @@ mod tests {
     fn test_to_fen_advanced_caro_kann() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::new(Square::E2, Square::E4));
-        board.move_piece(Move::new(Square::C7, Square::C6));
-        board.move_piece(Move::new(Square::D2, Square::D4));
-        board.move_piece(Move::new(Square::D7, Square::D5));
-        board.move_piece(Move::new(Square::E4, Square::E5));
-        board.move_piece(Move::new(Square::C8, Square::F5));
-        board.move_piece(Move::new(Square::F1, Square::E2));
-        board.move_piece(Move::new(Square::E7, Square::E6));
-        board.move_piece(Move::new(Square::G1, Square::F3));
-        board.move_piece(Move::new(Square::C6, Square::C5));
-        board.move_piece(Move::new(Square::C1, Square::E3));
+        board.move_piece(Move::from_square(Square::E2, Square::E4));
+        board.move_piece(Move::from_square(Square::C7, Square::C6));
+        board.move_piece(Move::from_square(Square::D2, Square::D4));
+        board.move_piece(Move::from_square(Square::D7, Square::D5));
+        board.move_piece(Move::from_square(Square::E4, Square::E5));
+        board.move_piece(Move::from_square(Square::C8, Square::F5));
+        board.move_piece(Move::from_square(Square::F1, Square::E2));
+        board.move_piece(Move::from_square(Square::E7, Square::E6));
+        board.move_piece(Move::from_square(Square::G1, Square::F3));
+        board.move_piece(Move::from_square(Square::C6, Square::C5));
+        board.move_piece(Move::from_square(Square::C1, Square::E3));
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 1;
         board.full_move_number = 6;
@@ -595,28 +604,28 @@ mod tests {
     fn test_to_fen_marshall_attack() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::new(Square::E2, Square::E4));
-        board.move_piece(Move::new(Square::E7, Square::E5));
-        board.move_piece(Move::new(Square::G1, Square::F3));
-        board.move_piece(Move::new(Square::B8, Square::C6));
-        board.move_piece(Move::new(Square::F1, Square::B5));
-        board.move_piece(Move::new(Square::A7, Square::A6));
-        board.move_piece(Move::new(Square::B5, Square::A4));
-        board.move_piece(Move::new(Square::G8, Square::F6));
+        board.move_piece(Move::from_square(Square::E2, Square::E4));
+        board.move_piece(Move::from_square(Square::E7, Square::E5));
+        board.move_piece(Move::from_square(Square::G1, Square::F3));
+        board.move_piece(Move::from_square(Square::B8, Square::C6));
+        board.move_piece(Move::from_square(Square::F1, Square::B5));
+        board.move_piece(Move::from_square(Square::A7, Square::A6));
+        board.move_piece(Move::from_square(Square::B5, Square::A4));
+        board.move_piece(Move::from_square(Square::G8, Square::F6));
         // TODO: Handle castling
-        board.move_piece(Move::new(Square::E1, Square::G1));
-        board.move_piece(Move::new(Square::H1, Square::F1));
+        board.move_piece(Move::from_square(Square::E1, Square::G1));
+        board.move_piece(Move::from_square(Square::H1, Square::F1));
         // end
-        board.move_piece(Move::new(Square::F8, Square::E7));
-        board.move_piece(Move::new(Square::F1, Square::E1));
-        board.move_piece(Move::new(Square::B7, Square::B5));
-        board.move_piece(Move::new(Square::A4, Square::B3));
+        board.move_piece(Move::from_square(Square::F8, Square::E7));
+        board.move_piece(Move::from_square(Square::F1, Square::E1));
+        board.move_piece(Move::from_square(Square::B7, Square::B5));
+        board.move_piece(Move::from_square(Square::A4, Square::B3));
         // TODO: Handle castling
-        board.move_piece(Move::new(Square::E8, Square::G8));
-        board.move_piece(Move::new(Square::H8, Square::F8));
+        board.move_piece(Move::from_square(Square::E8, Square::G8));
+        board.move_piece(Move::from_square(Square::H8, Square::F8));
         // end
-        board.move_piece(Move::new(Square::C2, Square::C3));
-        board.move_piece(Move::new(Square::D7, Square::D5));
+        board.move_piece(Move::from_square(Square::C2, Square::C3));
+        board.move_piece(Move::from_square(Square::D7, Square::D5));
 
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 0;
