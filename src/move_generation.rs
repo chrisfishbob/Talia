@@ -201,6 +201,7 @@ mod tests {
         assert_eq!(move_generator.moves.len(), 0);
     }
 
+    #[test]
     fn test_generate_sliding_moves_empty_black() {
         let mut move_generator = MoveGenerator::default();
         move_generator.board.move_piece(Move::from_square(Square::E2, Square::E4));
