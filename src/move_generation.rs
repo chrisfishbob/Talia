@@ -1,9 +1,10 @@
 #![allow(unused)]
+use core::fmt;
+
 use crate::board::Board;
 use crate::piece::{Piece, PieceKind};
 use crate::square::Square;
 
-#[derive(Debug, PartialEq)]
 pub struct Move {
     pub starting_square: usize,
     pub target_square: usize,
@@ -20,8 +21,19 @@ impl Move {
     pub fn from_square(starting_square: Square, target_square: Square) -> Self {
         Self {
             starting_square: starting_square as usize,
-            target_square: target_square as usize
+            target_square: target_square as usize,
         }
+    }
+}
+
+impl fmt::Debug for Move {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "starting_square: {:?}, target_square: {:?}",
+            Square::from_index(self.starting_square),
+            Square::from_index(self.target_square)
+        )
     }
 }
 
@@ -62,8 +74,16 @@ impl MoveGenerator {
     }
 
     fn generate_sliding_moves(&mut self, start_square: usize, piece: Piece) {
-        let start_direction_index = if piece.piece_kind == PieceKind::Bishop { 4 } else { 0 };
-        let end_direction_index = if piece.piece_kind == PieceKind::Rook { 4 } else { 8 };
+        let start_direction_index = if piece.piece_kind == PieceKind::Bishop {
+            4
+        } else {
+            0
+        };
+        let end_direction_index = if piece.piece_kind == PieceKind::Rook {
+            4
+        } else {
+            8
+        };
 
         for direction_index in start_direction_index..end_direction_index {
             for n in 0..self.num_squares_to_edge[start_square][direction_index] {
@@ -121,9 +141,9 @@ impl MoveGenerator {
 
 #[cfg(test)]
 mod tests {
+    use crate::board::Board;
     use crate::move_generation::MoveGenerator;
     use crate::square::Square;
-    use crate::board::Board;
 
     #[test]
     fn test_num_squares_to_edge() {

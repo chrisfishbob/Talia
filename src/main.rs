@@ -1,11 +1,10 @@
 pub mod board;
+pub mod move_generation;
 pub mod piece;
 pub mod square;
-pub mod move_generation;
 use crate::board::Board;
-use crate::square::Square;
 use crate::move_generation::{Move, MoveGenerator};
-
+use crate::square::Square;
 
 fn main() {
     let mut board = Board::starting_position();

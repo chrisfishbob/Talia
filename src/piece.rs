@@ -82,7 +82,10 @@ impl Piece {
     }
 
     pub fn is_sliding_piece(&self) -> bool {
-        matches!(self.piece_kind, PieceKind::Queen | PieceKind::Rook | PieceKind::Bishop)
+        matches!(
+            self.piece_kind,
+            PieceKind::Queen | PieceKind::Rook | PieceKind::Bishop
+        )
     }
 }
 
