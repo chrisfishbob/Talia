@@ -60,11 +60,6 @@ impl MoveGenerator {
         }
     }
 
-    pub fn generated_move(&self, starting_square: Square, target_square: Square) -> bool {
-        self.moves
-            .contains(&Move::from_square(starting_square, target_square))
-    }
-
     pub fn generate_moves(&mut self) -> Vec<Move> {
         let moves: Vec<Move> = Vec::new();
 
@@ -173,6 +168,12 @@ impl MoveGenerator {
         }
 
         num_squares_to_edge
+    }
+
+    #[cfg(test)]
+    fn generated_move(&self, starting_square: Square, target_square: Square) -> bool {
+        self.moves
+            .contains(&Move::from_square(starting_square, target_square))
     }
 }
 
