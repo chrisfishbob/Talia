@@ -265,33 +265,16 @@ mod tests {
         move_generator.generate_sliding_moves(Square::D1.as_index());
         move_generator.generate_sliding_moves(Square::F1.as_index());
         move_generator.generate_sliding_moves(Square::H1.as_index());
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D1, Square::E2)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D1, Square::F3)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D1, Square::G4)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D1, Square::H5)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::E2)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::D3)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::C4)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::B5)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::A6)));
+
+        assert!(move_generator.generated_move(Square::D1, Square::E2));
+        assert!(move_generator.generated_move(Square::D1, Square::F3));
+        assert!(move_generator.generated_move(Square::D1, Square::G4));
+        assert!(move_generator.generated_move(Square::D1, Square::H5));
+        assert!(move_generator.generated_move(Square::F1, Square::E2));
+        assert!(move_generator.generated_move(Square::F1, Square::D3));
+        assert!(move_generator.generated_move(Square::F1, Square::C4));
+        assert!(move_generator.generated_move(Square::F1, Square::B5));
+        assert!(move_generator.generated_move(Square::F1, Square::A6));
         assert_eq!(move_generator.moves.len(), 9);
     }
 
@@ -315,33 +298,16 @@ mod tests {
         move_generator.generate_sliding_moves(Square::D8.as_index());
         move_generator.generate_sliding_moves(Square::F8.as_index());
         move_generator.generate_sliding_moves(Square::H8.as_index());
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D8, Square::E7)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D8, Square::F6)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D8, Square::G5)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D8, Square::H4)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F8, Square::E7)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F8, Square::D6)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F8, Square::C5)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F8, Square::B4)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F8, Square::A3)));
+
+        assert!(move_generator.generated_move(Square::D8, Square::E7));
+        assert!(move_generator.generated_move(Square::D8, Square::F6));
+        assert!(move_generator.generated_move(Square::D8, Square::G5));
+        assert!(move_generator.generated_move(Square::D8, Square::H4));
+        assert!(move_generator.generated_move(Square::F8, Square::E7));
+        assert!(move_generator.generated_move(Square::F8, Square::D6));
+        assert!(move_generator.generated_move(Square::F8, Square::C5));
+        assert!(move_generator.generated_move(Square::F8, Square::B4));
+        assert!(move_generator.generated_move(Square::F8, Square::A3));
         assert_eq!(move_generator.moves.len(), 9);
     }
 
@@ -367,27 +333,13 @@ mod tests {
         move_generator.generate_sliding_moves(Square::F1.as_index());
         move_generator.generate_sliding_moves(Square::H1.as_index());
 
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::D1, Square::E2)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::E2)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::D3)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::C4)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::B5)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::F1, Square::A6)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::H1, Square::G1)));
+        assert!(move_generator.generated_move(Square::D1, Square::E2));
+        assert!(move_generator.generated_move(Square::F1, Square::E2));
+        assert!(move_generator.generated_move(Square::F1, Square::D3));
+        assert!(move_generator.generated_move(Square::F1, Square::C4));
+        assert!(move_generator.generated_move(Square::F1, Square::B5));
+        assert!(move_generator.generated_move(Square::F1, Square::A6));
+        assert!(move_generator.generated_move(Square::H1, Square::G1));
         assert_eq!(move_generator.moves.len(), 7);
     }
 
@@ -399,15 +351,9 @@ mod tests {
         move_generator.generate_sliding_moves(Square::A8.as_index());
 
         assert_eq!(move_generator.moves.len(), 3);
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::A8, Square::A7)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::A8, Square::B8)));
-        assert!(move_generator
-            .moves
-            .contains(&Move::from_square(Square::A8, Square::B7)));
+        assert!(move_generator.generated_move(Square::A8, Square::A7));
+        assert!(move_generator.generated_move(Square::A8, Square::B8));
+        assert!(move_generator.generated_move(Square::A8, Square::B7));
     }
 
     #[test]
