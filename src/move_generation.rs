@@ -128,6 +128,7 @@ impl MoveGenerator {
                 continue;
             }
 
+            // Prevents the knight from teleporting from one side to another Pacman-style.
             if (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2 {
                 continue;
             }
