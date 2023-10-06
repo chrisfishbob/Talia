@@ -131,6 +131,7 @@ impl MoveGenerator {
             if (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2 {
                 continue;
             }
+
             let target_square = target_square as usize;
 
             match self.board.colors[target_square] {
