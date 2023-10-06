@@ -3,7 +3,7 @@ use core::fmt;
 use std::collections::HashSet;
 
 use crate::board::Board;
-use crate::piece::{Piece, PieceKind};
+use crate::piece::Piece;
 use crate::square::Square;
 
 #[derive(Eq, PartialEq, Hash)]
@@ -67,12 +67,14 @@ impl MoveGenerator {
 
         for square in 0..64 {
             let piece = self.board.squares[square];
-            // TODO: There is probably something more idiomatic here
-            if piece.is_none() || piece.unwrap().color != self.board.to_move {
-                continue;
+            let color = self.board.colors[square];
+            match color {
+                None => continue,
+                Some(color) if color != self.board.to_move => continue,
+                _ => (),
             }
 
-            let piece = piece.expect("Piece should not be None");
+            let piece = piece.expect("Piece should not be None if color exists");
             if piece.is_sliding_piece() {
                 self.generate_sliding_moves(square);
             }
@@ -83,17 +85,12 @@ impl MoveGenerator {
 
     fn generate_sliding_moves(&mut self, start_square: usize) {
         let piece = self.board.squares[start_square]
-            .expect("should not be generating sliding moves from unoccupied square");
-        let start_direction_index = if piece.piece_kind == PieceKind::Bishop {
-            4
-        } else {
-            0
-        };
-        let end_direction_index = if piece.piece_kind == PieceKind::Rook {
-            4
-        } else {
-            8
-        };
+            .expect("should not be generating sliding moves from an empty square");
+        let color = self.board.colors[start_square]
+            .expect("should not be generating sliding moves from an empty square");
+
+        let start_direction_index = if piece == Piece::Bishop { 4 } else { 0 };
+        let end_direction_index = if piece == Piece::Rook { 4 } else { 8 };
 
         for direction_index in start_direction_index..end_direction_index {
             for n in 0..self.num_squares_to_edge[start_square][direction_index] {
@@ -101,11 +98,10 @@ impl MoveGenerator {
                     + self.direction_offsets[direction_index] * (n as isize + 1);
                 let target_square = target_square as usize;
                 let piece_on_target_square = self.board.squares[target_square];
+                let color_on_target_square = self.board.colors[target_square];
 
-                match piece_on_target_square {
-                    Some(Piece { piece_kind, color }) => {
-                        // If the piece is the opponent's color, then the capture is legal
-                        // but stop here.
+                match color_on_target_square {
+                    Some(color) => {
                         if color != self.board.to_move {
                             self.moves.push(Move::new(start_square, target_square));
                         }
@@ -338,6 +334,7 @@ mod tests {
         move_generator.generate_sliding_moves(Square::D1 as usize);
         move_generator.generate_sliding_moves(Square::F1 as usize);
         move_generator.generate_sliding_moves(Square::H1 as usize);
+
         assert!(move_generator
             .moves
             .contains(&Move::from_square(Square::D1, Square::E2)));

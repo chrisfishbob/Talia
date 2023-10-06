@@ -29,6 +29,7 @@ impl error::Error for BoardError {}
 #[derive(PartialEq, Eq)]
 pub struct Board {
     pub squares: [Option<Piece>; 64],
+    pub colors: [Option<Color>; 64],
     pub to_move: Color,
     pub can_white_king_side_castle: bool,
     pub can_black_king_side_castle: bool,
@@ -43,6 +44,7 @@ impl Default for Board {
     fn default() -> Self {
         Self {
             squares: [None; 64],
+            colors: [None; 64],
             to_move: Color::White,
             can_white_king_side_castle: false,
             can_white_queen_side_castle: false,
@@ -57,19 +59,30 @@ impl Default for Board {
 
 impl fmt::Display for Board {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let board_vec: Vec<Vec<char>> = self
-            .squares
-            .chunks(8)
-            .rev()
-            .map(|rank| {
-                rank.iter()
-                    .map(|c| match c {
-                        Some(piece) => format!("{piece}").chars().next().unwrap(),
-                        None => ' ',
-                    })
-                    .collect()
-            })
-            .collect();
+        let mut board_vec: Vec<Vec<char>> = Vec::new();
+
+        for rank in (0..8).rev() {
+            let mut row: Vec<char> = Vec::new();
+            for file in 0..8 {
+                let index = rank * 8 + file;
+                let piece = self.squares[index];
+                let color = self.colors[index];
+
+                let character = match piece {
+                    Some(piece) => format!(
+                        "{}",
+                        piece.to_symbol(color.expect("square occupied by piece must have color"))
+                    )
+                    .chars()
+                    .next()
+                    .unwrap(),
+                    None => ' ',
+                };
+                row.push(character);
+            }
+
+            board_vec.push(row);
+        }
 
         writeln!(f)?;
         for (i, rank) in board_vec.iter().enumerate() {
@@ -114,7 +127,8 @@ impl Board {
         // 5: Fullmove number
         let fen_string_fields: Vec<&str> = fen.split_whitespace().collect();
 
-        let mut board: [Option<Piece>; 64] = [None; 64];
+        let mut squares: [Option<Piece>; 64] = [None; 64];
+        let mut colors: [Option<Color>; 64] = [None; 64];
         let mut file = 0;
         let mut rank = 7;
 
@@ -126,9 +140,26 @@ impl Board {
                 }
                 '1'..='8' => file += symbol.to_digit(10).unwrap(),
                 piece_char => {
-                    let piece = Piece::from_symbol(piece_char)
-                        .ok_or(BoardError::new("invalid piece symbol in FEN"))?;
-                    board[rank * 8 + file as usize] = Some(piece);
+                    let (piece, color) = match piece_char {
+                        'P' => (Piece::Pawn, Color::White),
+                        'p' => (Piece::Pawn, Color::Black),
+                        'N' => (Piece::Knight, Color::White),
+                        'n' => (Piece::Knight, Color::Black),
+                        'B' => (Piece::Bishop, Color::White),
+                        'b' => (Piece::Bishop, Color::Black),
+                        'R' => (Piece::Rook, Color::White),
+                        'r' => (Piece::Rook, Color::Black),
+                        'Q' => (Piece::Queen, Color::White),
+                        'q' => (Piece::Queen, Color::Black),
+                        'K' => (Piece::King, Color::White),
+                        'k' => (Piece::King, Color::Black),
+                        _ => Err(BoardError::new("invalid piece symbol in FEN"))?,
+                    };
+
+                    let index = rank * 8 + file as usize;
+                    squares[index] = Some(piece);
+                    colors[index] = Some(color);
+
                     file += 1;
                 }
             }
@@ -162,7 +193,8 @@ impl Board {
             .map_err(|_| BoardError::new("failed to parse full move number from fen"))?;
 
         Ok(Self {
-            squares: board,
+            squares,
+            colors,
             to_move,
             en_passant_square: Self::parse_en_passant_square(fen_string_fields[3])?,
             can_white_king_side_castle: castling_rights.contains(&'K'),
@@ -180,16 +212,18 @@ impl Board {
         for rank in (0..8).rev() {
             let mut empty_squares = 0;
             for file in 0..8 {
-                let square = self.squares[rank * 8 + file];
-                match square {
-                    Some(piece) => {
+                let index = rank * 8 + file;
+                let piece = self.squares[index];
+                let color = self.colors[index];
+                match (piece, color) {
+                    (Some(piece), Some(color)) => {
                         if empty_squares > 0 {
                             fen.push_str(&empty_squares.to_string());
                             empty_squares = 0;
                         }
-                        fen.push(piece.to_symbol());
+                        fen.push(piece.to_symbol(color));
                     }
-                    None => empty_squares += 1,
+                    _ => empty_squares += 1,
                 }
             }
             if empty_squares > 0 {
@@ -265,9 +299,12 @@ impl Board {
     // TODO: Handle en passant, castling, promotion, ...
     // TODO: Handle move increment
     pub fn move_piece(&mut self, mv: Move) {
-        let starting_piece = self.squares[mv.starting_square as usize];
-        self.squares[mv.target_square as usize] = starting_piece;
-        self.squares[mv.starting_square as usize] = None;
+        let starting_piece = self.squares[mv.starting_square];
+        let starting_piece_color = self.colors[mv.starting_square];
+        self.squares[mv.target_square] = starting_piece;
+        self.colors[mv.target_square] = starting_piece_color;
+        self.squares[mv.starting_square] = None;
+        self.colors[mv.starting_square] = None;
 
         if let Color::White = self.to_move {
             self.to_move = Color::Black;
@@ -276,8 +313,20 @@ impl Board {
         }
     }
 
-    pub fn set_square(&mut self, square: Square, piece: Option<Piece>) {
-        self.squares[square as usize] = piece;
+    pub fn put_piece(&mut self, square: Square, piece: Piece, color: Color) {
+        self.squares[square as usize] = Some(piece);
+        self.colors[square as usize] = Some(color);
+    }
+
+    pub fn is_piece_at_square(&self, square: Square, piece: Piece, color: Color) -> bool {
+        match (self.squares[square as usize], self.colors[square as usize]) {
+            (Some(s), Some(c)) => s == piece && c == color,
+            _ => false,
+        }
+    }
+
+    pub fn is_square_empty(&self, square: Square) -> bool {
+        self.squares[square as usize].is_none() && self.colors[square as usize].is_none()
     }
 }
 
@@ -286,47 +335,24 @@ mod tests {
     use crate::{
         board::{Board, Square},
         move_generation::Move,
-        piece::{Color, Piece, PieceKind},
+        piece::{Color, Piece},
     };
 
     #[test]
     fn test_starting_position_board_config() {
         let board = Board::starting_position();
-        assert_eq!(
-            board.squares[Square::A1 as usize],
-            Some(Piece::new(PieceKind::Rook, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::B1 as usize],
-            Some(Piece::new(PieceKind::Knight, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::C1 as usize],
-            Some(Piece::new(PieceKind::Bishop, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::D1 as usize],
-            Some(Piece::new(PieceKind::Queen, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::E1 as usize],
-            Some(Piece::new(PieceKind::King, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::F1 as usize],
-            Some(Piece::new(PieceKind::Bishop, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::G1 as usize],
-            Some(Piece::new(PieceKind::Knight, Color::White))
-        );
-        assert_eq!(
-            board.squares[Square::H1 as usize],
-            Some(Piece::new(PieceKind::Rook, Color::White))
-        );
+        assert!(board.is_piece_at_square(Square::A1, Piece::Rook, Color::White));
+        assert!(board.is_piece_at_square(Square::B1, Piece::Knight, Color::White));
+        assert!(board.is_piece_at_square(Square::C1, Piece::Bishop, Color::White));
+        assert!(board.is_piece_at_square(Square::D1, Piece::Queen, Color::White));
+        assert!(board.is_piece_at_square(Square::E1, Piece::King, Color::White));
+        assert!(board.is_piece_at_square(Square::F1, Piece::Bishop, Color::White));
+        assert!(board.is_piece_at_square(Square::G1, Piece::Knight, Color::White));
+        assert!(board.is_piece_at_square(Square::H1, Piece::Rook, Color::White));
 
         for i in Square::A2 as usize..=Square::H2 as usize {
-            assert_eq!(board.squares[i], Some(Piece::new(PieceKind::Pawn, Color::White)));
+            assert_eq!(board.squares[i], Some(Piece::Pawn));
+            assert_eq!(board.colors[i], Some(Color::White))
         }
 
         for i in Square::A3 as usize..=Square::H6 as usize {
@@ -334,41 +360,18 @@ mod tests {
         }
 
         for i in Square::A7 as usize..=Square::H7 as usize {
-            assert_eq!(board.squares[i], Some(Piece::new(PieceKind::Pawn, Color::Black)));
+            assert_eq!(board.squares[i], Some(Piece::Pawn));
+            assert_eq!(board.colors[i], Some(Color::Black))
         }
 
-        assert_eq!(
-            board.squares[Square::A8 as usize],
-            Some(Piece::new(PieceKind::Rook, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::B8 as usize],
-            Some(Piece::new(PieceKind::Knight, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::C8 as usize],
-            Some(Piece::new(PieceKind::Bishop, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::D8 as usize],
-            Some(Piece::new(PieceKind::Queen, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::E8 as usize],
-            Some(Piece::new(PieceKind::King, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::F8 as usize],
-            Some(Piece::new(PieceKind::Bishop, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::G8 as usize],
-            Some(Piece::new(PieceKind::Knight, Color::Black))
-        );
-        assert_eq!(
-            board.squares[Square::H8 as usize],
-            Some(Piece::new(PieceKind::Rook, Color::Black))
-        );
+        assert!(board.is_piece_at_square(Square::A8, Piece::Rook, Color::Black));
+        assert!(board.is_piece_at_square(Square::B8, Piece::Knight, Color::Black));
+        assert!(board.is_piece_at_square(Square::C8, Piece::Bishop, Color::Black));
+        assert!(board.is_piece_at_square(Square::D8, Piece::Queen, Color::Black));
+        assert!(board.is_piece_at_square(Square::E8, Piece::King, Color::Black));
+        assert!(board.is_piece_at_square(Square::F8, Piece::Bishop, Color::Black));
+        assert!(board.is_piece_at_square(Square::G8, Piece::Knight, Color::Black));
+        assert!(board.is_piece_at_square(Square::H8, Piece::Rook, Color::Black));
 
         assert_eq!(board.to_move, Color::White);
         assert_eq!(board.en_passant_square, None);
@@ -414,20 +417,20 @@ mod tests {
             ..Default::default()
         };
 
-        board.set_square(Square::D1, Some(Piece::new(PieceKind::Bishop, Color::Black)));
-        board.set_square(Square::A2, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        board.set_square(Square::B2, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        board.set_square(Square::F2, Some(Piece::new(PieceKind::King, Color::White)));
-        board.set_square(Square::H2, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        board.set_square(Square::D4, Some(Piece::new(PieceKind::Pawn, Color::White)));
-        board.set_square(Square::E4, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::A6, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::G6, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::B7, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::C7, Some(Piece::new(PieceKind::Rook, Color::White)));
-        board.set_square(Square::E7, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::H7, Some(Piece::new(PieceKind::Pawn, Color::Black)));
-        board.set_square(Square::F8, Some(Piece::new(PieceKind::King, Color::Black)));
+        board.put_piece(Square::D1, Piece::Bishop, Color::Black);
+        board.put_piece(Square::A2, Piece::Pawn, Color::White);
+        board.put_piece(Square::B2, Piece::Pawn, Color::White);
+        board.put_piece(Square::F2, Piece::King, Color::White);
+        board.put_piece(Square::H2, Piece::Pawn, Color::White);
+        board.put_piece(Square::D4, Piece::Pawn, Color::White);
+        board.put_piece(Square::E4, Piece::Pawn, Color::Black);
+        board.put_piece(Square::A6, Piece::Pawn, Color::Black);
+        board.put_piece(Square::G6, Piece::Pawn, Color::Black);
+        board.put_piece(Square::B7, Piece::Pawn, Color::Black);
+        board.put_piece(Square::E7, Piece::Pawn, Color::Black);
+        board.put_piece(Square::C7, Piece::Rook, Color::White);
+        board.put_piece(Square::H7, Piece::Pawn, Color::Black);
+        board.put_piece(Square::F8, Piece::King, Color::Black);
 
         let created_board =
             Board::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();

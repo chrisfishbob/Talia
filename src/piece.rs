@@ -1,13 +1,7 @@
 use core::fmt;
 
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub struct Piece {
-    pub piece_kind: PieceKind,
-    pub color: Color,
-}
-
-#[derive(Copy, Clone, PartialEq, Eq)]
-pub enum PieceKind {
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum Piece {
     Pawn,
     Knight,
     Bishop,
@@ -16,76 +10,27 @@ pub enum PieceKind {
     King,
 }
 
-impl fmt::Display for Piece {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match (self.piece_kind, self.color) {
-            (PieceKind::Pawn, Color::White) => write!(f, "P"),
-            (PieceKind::Pawn, Color::Black) => write!(f, "p"),
-            (PieceKind::Knight, Color::White) => write!(f, "N"),
-            (PieceKind::Knight, Color::Black) => write!(f, "n"),
-            (PieceKind::Bishop, Color::White) => write!(f, "B"),
-            (PieceKind::Bishop, Color::Black) => write!(f, "b"),
-            (PieceKind::Rook, Color::White) => write!(f, "R"),
-            (PieceKind::Rook, Color::Black) => write!(f, "r"),
-            (PieceKind::Queen, Color::White) => write!(f, "Q"),
-            (PieceKind::Queen, Color::Black) => write!(f, "q"),
-            (PieceKind::King, Color::White) => write!(f, "K"),
-            (PieceKind::King, Color::Black) => write!(f, "k"),
-        }
-    }
-}
-
-impl fmt::Debug for Piece {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self)
-    }
-}
 
 impl Piece {
-    pub fn new(piece_kind: PieceKind, color: Color) -> Self {
-        Self { piece_kind, color }
-    }
-
-    pub fn from_symbol(symbol: char) -> Option<Self> {
-        match symbol {
-            'P' => Some(Self::new(PieceKind::Pawn, Color::White)),
-            'p' => Some(Self::new(PieceKind::Pawn, Color::Black)),
-            'N' => Some(Self::new(PieceKind::Knight, Color::White)),
-            'n' => Some(Self::new(PieceKind::Knight, Color::Black)),
-            'B' => Some(Self::new(PieceKind::Bishop, Color::White)),
-            'b' => Some(Self::new(PieceKind::Bishop, Color::Black)),
-            'R' => Some(Self::new(PieceKind::Rook, Color::White)),
-            'r' => Some(Self::new(PieceKind::Rook, Color::Black)),
-            'Q' => Some(Self::new(PieceKind::Queen, Color::White)),
-            'q' => Some(Self::new(PieceKind::Queen, Color::Black)),
-            'K' => Some(Self::new(PieceKind::King, Color::White)),
-            'k' => Some(Self::new(PieceKind::King, Color::Black)),
-            _ => None,
-        }
-    }
-
-    pub fn to_symbol(&self) -> char {
-        match (self.piece_kind, self.color) {
-            (PieceKind::Pawn, Color::White) => 'P',
-            (PieceKind::Pawn, Color::Black) => 'p',
-            (PieceKind::Knight, Color::White) => 'N',
-            (PieceKind::Knight, Color::Black) => 'n',
-            (PieceKind::Bishop, Color::White) => 'B',
-            (PieceKind::Bishop, Color::Black) => 'b',
-            (PieceKind::Rook, Color::White) => 'R',
-            (PieceKind::Rook, Color::Black) => 'r',
-            (PieceKind::Queen, Color::White) => 'Q',
-            (PieceKind::Queen, Color::Black) => 'q',
-            (PieceKind::King, Color::White) => 'K',
-            (PieceKind::King, Color::Black) => 'k',
+    pub fn to_symbol(&self, color: Color) -> char {
+        match (self, color) {
+            (Self::Pawn, Color::White) => 'P',
+            (Self::Pawn, Color::Black) => 'p',
+            (Self::Knight, Color::White) => 'N',
+            (Self::Knight, Color::Black) => 'n',
+            (Self::Bishop, Color::White) => 'B',
+            (Self::Bishop, Color::Black) => 'b',
+            (Self::Rook, Color::White) => 'R',
+            (Self::Rook, Color::Black) => 'r',
+            (Self::Queen, Color::White) => 'Q',
+            (Self::Queen, Color::Black) => 'q',
+            (Self::King, Color::White) => 'K',
+            (Self::King, Color::Black) => 'k',
         }
     }
 
     pub fn is_sliding_piece(&self) -> bool {
-        matches!(
-            self.piece_kind,
-            PieceKind::Queen | PieceKind::Rook | PieceKind::Bishop
-        )
+        matches!(self, Piece::Queen | Piece::Rook | Piece::Bishop)
     }
 }
 
