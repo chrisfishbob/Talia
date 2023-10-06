@@ -1,6 +1,4 @@
-#![allow(unused)]
 use core::fmt;
-use std::collections::HashSet;
 
 use crate::board::Board;
 use crate::piece::Piece;
@@ -40,9 +38,9 @@ impl fmt::Debug for Move {
 }
 
 pub struct MoveGenerator {
+    pub moves: Vec<Move>,
     num_squares_to_edge: [[usize; 8]; 64],
     direction_offsets: [isize; 8],
-    pub moves: Vec<Move>,
     board: Board,
 }
 
@@ -86,8 +84,6 @@ impl MoveGenerator {
     fn generate_sliding_moves(&mut self, start_square: usize) {
         let piece = self.board.squares[start_square]
             .expect("should not be generating sliding moves from an empty square");
-        let color = self.board.colors[start_square]
-            .expect("should not be generating sliding moves from an empty square");
 
         let start_direction_index = if piece == Piece::Bishop { 4 } else { 0 };
         let end_direction_index = if piece == Piece::Rook { 4 } else { 8 };
@@ -97,7 +93,6 @@ impl MoveGenerator {
                 let target_square = start_square as isize
                     + self.direction_offsets[direction_index] * (n as isize + 1);
                 let target_square = target_square as usize;
-                let piece_on_target_square = self.board.squares[target_square];
                 let color_on_target_square = self.board.colors[target_square];
 
                 match color_on_target_square {
@@ -151,53 +146,52 @@ mod tests {
     use crate::move_generation::{Move, MoveGenerator};
     use crate::piece::Color;
     use crate::square::Square;
-    use std::collections::HashSet;
 
     #[test]
     fn test_num_squares_to_edge() {
         let move_generator = MoveGenerator::default();
         // North
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][0], 7);
-        assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][0], 4);
-        assert_eq!(move_generator.num_squares_to_edge[Square::A8 as usize][0], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][0], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A4.as_index()][0], 4);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A8.as_index()][0], 0);
         // South
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][1], 0);
-        assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][1], 3);
-        assert_eq!(move_generator.num_squares_to_edge[Square::A8 as usize][1], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][1], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A4.as_index()][1], 3);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A8.as_index()][1], 7);
         // West
-        assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][2], 0);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][2], 4);
-        assert_eq!(move_generator.num_squares_to_edge[Square::H4 as usize][2], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A4.as_index()][2], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][2], 4);
+        assert_eq!(move_generator.num_squares_to_edge[Square::H4.as_index()][2], 7);
         // East
-        assert_eq!(move_generator.num_squares_to_edge[Square::A4 as usize][3], 7);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][3], 3);
-        assert_eq!(move_generator.num_squares_to_edge[Square::H4 as usize][3], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A4.as_index()][3], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][3], 3);
+        assert_eq!(move_generator.num_squares_to_edge[Square::H4.as_index()][3], 0);
         // North West
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][4], 0);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][4], 4);
-        assert_eq!(move_generator.num_squares_to_edge[Square::H1 as usize][4], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][4], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][4], 4);
+        assert_eq!(move_generator.num_squares_to_edge[Square::H1.as_index()][4], 7);
         // South East
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][5], 0);
-        assert_eq!(move_generator.num_squares_to_edge[Square::A8 as usize][5], 7);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][5], 3);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][5], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A8.as_index()][5], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][5], 3);
         // North East
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][6], 7);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][6], 3);
-        assert_eq!(move_generator.num_squares_to_edge[Square::H4 as usize][6], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][6], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][6], 3);
+        assert_eq!(move_generator.num_squares_to_edge[Square::H4.as_index()][6], 0);
         // South West
-        assert_eq!(move_generator.num_squares_to_edge[Square::A1 as usize][7], 0);
-        assert_eq!(move_generator.num_squares_to_edge[Square::E4 as usize][7], 3);
-        assert_eq!(move_generator.num_squares_to_edge[Square::H8 as usize][7], 7);
+        assert_eq!(move_generator.num_squares_to_edge[Square::A1.as_index()][7], 0);
+        assert_eq!(move_generator.num_squares_to_edge[Square::E4.as_index()][7], 3);
+        assert_eq!(move_generator.num_squares_to_edge[Square::H8.as_index()][7], 7);
     }
 
     #[test]
     fn test_generate_sliding_moves_empty_white() {
         let mut move_generator = MoveGenerator::default();
-        move_generator.generate_sliding_moves(Square::A1 as usize);
-        move_generator.generate_sliding_moves(Square::C1 as usize);
-        move_generator.generate_sliding_moves(Square::D1 as usize);
-        move_generator.generate_sliding_moves(Square::F1 as usize);
-        move_generator.generate_sliding_moves(Square::H1 as usize);
+        move_generator.generate_sliding_moves(Square::A1.as_index());
+        move_generator.generate_sliding_moves(Square::C1.as_index());
+        move_generator.generate_sliding_moves(Square::D1.as_index());
+        move_generator.generate_sliding_moves(Square::F1.as_index());
+        move_generator.generate_sliding_moves(Square::H1.as_index());
         assert_eq!(move_generator.moves.len(), 0);
     }
 
@@ -210,11 +204,11 @@ mod tests {
         // TODO: Remove this when move_piece handles this
         move_generator.board.to_move = Color::Black;
 
-        move_generator.generate_sliding_moves(Square::A8 as usize);
-        move_generator.generate_sliding_moves(Square::C8 as usize);
-        move_generator.generate_sliding_moves(Square::D8 as usize);
-        move_generator.generate_sliding_moves(Square::F8 as usize);
-        move_generator.generate_sliding_moves(Square::H8 as usize);
+        move_generator.generate_sliding_moves(Square::A8.as_index());
+        move_generator.generate_sliding_moves(Square::C8.as_index());
+        move_generator.generate_sliding_moves(Square::D8.as_index());
+        move_generator.generate_sliding_moves(Square::F8.as_index());
+        move_generator.generate_sliding_moves(Square::H8.as_index());
         assert_eq!(move_generator.moves.len(), 0);
     }
 
@@ -228,11 +222,11 @@ mod tests {
             .board
             .move_piece(Move::from_square(Square::E7, Square::E5));
 
-        move_generator.generate_sliding_moves(Square::A1 as usize);
-        move_generator.generate_sliding_moves(Square::C1 as usize);
-        move_generator.generate_sliding_moves(Square::D1 as usize);
-        move_generator.generate_sliding_moves(Square::F1 as usize);
-        move_generator.generate_sliding_moves(Square::H1 as usize);
+        move_generator.generate_sliding_moves(Square::A1.as_index());
+        move_generator.generate_sliding_moves(Square::C1.as_index());
+        move_generator.generate_sliding_moves(Square::D1.as_index());
+        move_generator.generate_sliding_moves(Square::F1.as_index());
+        move_generator.generate_sliding_moves(Square::H1.as_index());
         assert!(move_generator
             .moves
             .contains(&Move::from_square(Square::D1, Square::E2)));
@@ -278,11 +272,11 @@ mod tests {
         // TODO: Remove this when move_piece handles this
         move_generator.board.to_move = Color::Black;
 
-        move_generator.generate_sliding_moves(Square::A8 as usize);
-        move_generator.generate_sliding_moves(Square::C8 as usize);
-        move_generator.generate_sliding_moves(Square::D8 as usize);
-        move_generator.generate_sliding_moves(Square::F8 as usize);
-        move_generator.generate_sliding_moves(Square::H8 as usize);
+        move_generator.generate_sliding_moves(Square::A8.as_index());
+        move_generator.generate_sliding_moves(Square::C8.as_index());
+        move_generator.generate_sliding_moves(Square::D8.as_index());
+        move_generator.generate_sliding_moves(Square::F8.as_index());
+        move_generator.generate_sliding_moves(Square::H8.as_index());
         assert!(move_generator
             .moves
             .contains(&Move::from_square(Square::D8, Square::E7)));
@@ -329,11 +323,11 @@ mod tests {
             .board
             .move_piece(Move::from_square(Square::B8, Square::C6));
 
-        move_generator.generate_sliding_moves(Square::A1 as usize);
-        move_generator.generate_sliding_moves(Square::C1 as usize);
-        move_generator.generate_sliding_moves(Square::D1 as usize);
-        move_generator.generate_sliding_moves(Square::F1 as usize);
-        move_generator.generate_sliding_moves(Square::H1 as usize);
+        move_generator.generate_sliding_moves(Square::A1.as_index());
+        move_generator.generate_sliding_moves(Square::C1.as_index());
+        move_generator.generate_sliding_moves(Square::D1.as_index());
+        move_generator.generate_sliding_moves(Square::F1.as_index());
+        move_generator.generate_sliding_moves(Square::H1.as_index());
 
         assert!(move_generator
             .moves
@@ -357,5 +351,18 @@ mod tests {
             .moves
             .contains(&Move::from_square(Square::H1, Square::G1)));
         assert_eq!(move_generator.moves.len(), 7);
+    }
+
+    #[test]
+    fn test_generate_sliding_moves_from_corner() {
+        let board = Board::from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1").unwrap();
+        let mut move_generator = MoveGenerator::new(board);
+
+        move_generator.generate_sliding_moves(Square::A8.as_index());
+
+        assert_eq!(move_generator.moves.len(), 3);
+        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::A7)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::B8)));
+        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::B7)));
     }
 }

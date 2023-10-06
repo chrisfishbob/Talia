@@ -1,6 +1,10 @@
 use crate::board::BoardError;
 
-// Enum to make getting board indices easier, the board iteself is still index by usize
+#[derive(Copy, Clone, Debug)]
+pub struct Sq(u8);
+
+
+// Enum for developer ergonomics, should never exist in runtime. 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Square {
     A1,
@@ -70,6 +74,11 @@ pub enum Square {
 }
 
 impl Square {
+    pub fn as_index(self) -> usize {
+        self as usize
+    }
+
+
     pub fn from_algebraic_notation(s: &str) -> Result<Self, BoardError> {
         match s {
             "a1" => Ok(Square::A1),

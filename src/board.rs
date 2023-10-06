@@ -291,7 +291,7 @@ impl Board {
         }
 
         Ok(Some(
-            Square::from_algebraic_notation(en_passant_sqaure_field)? as usize
+            Square::from_algebraic_notation(en_passant_sqaure_field)?.as_index()
         ))
     }
 
@@ -313,20 +313,20 @@ impl Board {
         }
     }
 
-    pub fn put_piece(&mut self, square: Square, piece: Piece, color: Color) {
-        self.squares[square as usize] = Some(piece);
-        self.colors[square as usize] = Some(color);
+    pub fn put_piece(&mut self, square: usize, piece: Piece, color: Color) {
+        self.squares[square] = Some(piece);
+        self.colors[square] = Some(color);
     }
 
-    pub fn is_piece_at_square(&self, square: Square, piece: Piece, color: Color) -> bool {
-        match (self.squares[square as usize], self.colors[square as usize]) {
+    pub fn is_piece_at_square(&self, index: usize, piece: Piece, color: Color) -> bool {
+        match (self.squares[index], self.colors[index]) {
             (Some(s), Some(c)) => s == piece && c == color,
             _ => false,
         }
     }
 
-    pub fn is_square_empty(&self, square: Square) -> bool {
-        self.squares[square as usize].is_none() && self.colors[square as usize].is_none()
+    pub fn is_square_empty(&self, index: usize) -> bool {
+        self.squares[index].is_none() && self.colors[index].is_none()
     }
 }
 
@@ -341,14 +341,14 @@ mod tests {
     #[test]
     fn test_starting_position_board_config() {
         let board = Board::starting_position();
-        assert!(board.is_piece_at_square(Square::A1, Piece::Rook, Color::White));
-        assert!(board.is_piece_at_square(Square::B1, Piece::Knight, Color::White));
-        assert!(board.is_piece_at_square(Square::C1, Piece::Bishop, Color::White));
-        assert!(board.is_piece_at_square(Square::D1, Piece::Queen, Color::White));
-        assert!(board.is_piece_at_square(Square::E1, Piece::King, Color::White));
-        assert!(board.is_piece_at_square(Square::F1, Piece::Bishop, Color::White));
-        assert!(board.is_piece_at_square(Square::G1, Piece::Knight, Color::White));
-        assert!(board.is_piece_at_square(Square::H1, Piece::Rook, Color::White));
+        assert!(board.is_piece_at_square(Square::A1.as_index(), Piece::Rook, Color::White));
+        assert!(board.is_piece_at_square(Square::B1.as_index(), Piece::Knight, Color::White));
+        assert!(board.is_piece_at_square(Square::C1.as_index(), Piece::Bishop, Color::White));
+        assert!(board.is_piece_at_square(Square::D1.as_index(), Piece::Queen, Color::White));
+        assert!(board.is_piece_at_square(Square::E1.as_index(), Piece::King, Color::White));
+        assert!(board.is_piece_at_square(Square::F1.as_index(), Piece::Bishop, Color::White));
+        assert!(board.is_piece_at_square(Square::G1.as_index(), Piece::Knight, Color::White));
+        assert!(board.is_piece_at_square(Square::H1.as_index(), Piece::Rook, Color::White));
 
         for i in Square::A2 as usize..=Square::H2 as usize {
             assert_eq!(board.squares[i], Some(Piece::Pawn));
@@ -364,14 +364,14 @@ mod tests {
             assert_eq!(board.colors[i], Some(Color::Black))
         }
 
-        assert!(board.is_piece_at_square(Square::A8, Piece::Rook, Color::Black));
-        assert!(board.is_piece_at_square(Square::B8, Piece::Knight, Color::Black));
-        assert!(board.is_piece_at_square(Square::C8, Piece::Bishop, Color::Black));
-        assert!(board.is_piece_at_square(Square::D8, Piece::Queen, Color::Black));
-        assert!(board.is_piece_at_square(Square::E8, Piece::King, Color::Black));
-        assert!(board.is_piece_at_square(Square::F8, Piece::Bishop, Color::Black));
-        assert!(board.is_piece_at_square(Square::G8, Piece::Knight, Color::Black));
-        assert!(board.is_piece_at_square(Square::H8, Piece::Rook, Color::Black));
+        assert!(board.is_piece_at_square(Square::A8.as_index(), Piece::Rook, Color::Black));
+        assert!(board.is_piece_at_square(Square::B8.as_index(), Piece::Knight, Color::Black));
+        assert!(board.is_piece_at_square(Square::C8.as_index(), Piece::Bishop, Color::Black));
+        assert!(board.is_piece_at_square(Square::D8.as_index(), Piece::Queen, Color::Black));
+        assert!(board.is_piece_at_square(Square::E8.as_index(), Piece::King, Color::Black));
+        assert!(board.is_piece_at_square(Square::F8.as_index(), Piece::Bishop, Color::Black));
+        assert!(board.is_piece_at_square(Square::G8.as_index(), Piece::Knight, Color::Black));
+        assert!(board.is_piece_at_square(Square::H8.as_index(), Piece::Rook, Color::Black));
 
         assert_eq!(board.to_move, Color::White);
         assert_eq!(board.en_passant_square, None);
@@ -417,20 +417,20 @@ mod tests {
             ..Default::default()
         };
 
-        board.put_piece(Square::D1, Piece::Bishop, Color::Black);
-        board.put_piece(Square::A2, Piece::Pawn, Color::White);
-        board.put_piece(Square::B2, Piece::Pawn, Color::White);
-        board.put_piece(Square::F2, Piece::King, Color::White);
-        board.put_piece(Square::H2, Piece::Pawn, Color::White);
-        board.put_piece(Square::D4, Piece::Pawn, Color::White);
-        board.put_piece(Square::E4, Piece::Pawn, Color::Black);
-        board.put_piece(Square::A6, Piece::Pawn, Color::Black);
-        board.put_piece(Square::G6, Piece::Pawn, Color::Black);
-        board.put_piece(Square::B7, Piece::Pawn, Color::Black);
-        board.put_piece(Square::E7, Piece::Pawn, Color::Black);
-        board.put_piece(Square::C7, Piece::Rook, Color::White);
-        board.put_piece(Square::H7, Piece::Pawn, Color::Black);
-        board.put_piece(Square::F8, Piece::King, Color::Black);
+        board.put_piece(Square::D1.as_index(), Piece::Bishop, Color::Black);
+        board.put_piece(Square::A2.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::B2.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::F2.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H2.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::D4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::A6.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::G6.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::B7.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::C7.as_index(), Piece::Rook, Color::White);
+        board.put_piece(Square::H7.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::F8.as_index(), Piece::King, Color::Black);
 
         let created_board =
             Board::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();

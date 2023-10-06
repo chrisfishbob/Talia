@@ -10,7 +10,6 @@ pub enum Piece {
     King,
 }
 
-
 impl Piece {
     pub fn to_symbol(&self, color: Color) -> char {
         match (self, color) {
