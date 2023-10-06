@@ -60,6 +60,11 @@ impl MoveGenerator {
         }
     }
 
+    pub fn generated_move(&self, starting_square: Square, target_square: Square) -> bool {
+        self.moves
+            .contains(&Move::from_square(starting_square, target_square))
+    }
+
     pub fn generate_moves(&mut self) -> Vec<Move> {
         let moves: Vec<Move> = Vec::new();
 
@@ -75,6 +80,8 @@ impl MoveGenerator {
             let piece = piece.expect("Piece should not be None if color exists");
             if piece.is_sliding_piece() {
                 self.generate_sliding_moves(square);
+            } else if piece == Piece::Knight {
+                self.generate_knight_moves(square);
             }
         }
 
@@ -112,6 +119,35 @@ impl MoveGenerator {
         }
     }
 
+    fn generate_knight_moves(&mut self, start_square: usize) {
+        let knight_move_offsets = [-17, -15, -10, -6, 6, 10, 15, 17];
+
+        for offset in knight_move_offsets {
+            let target_square = start_square as isize + offset;
+            let starting_rank = start_square as isize / 8;
+            let starting_file = start_square as isize % 8;
+            let target_rank = target_square / 8;
+            let target_file = target_square % 8;
+
+            if !(0..64).contains(&target_square) {
+                continue;
+            }
+
+            if (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2 {
+                continue;
+            }
+            let target_square = target_square as usize;
+
+            match self.board.colors[target_square] {
+                None => self.moves.push(Move::new(start_square, target_square)),
+                Some(color) if color != self.board.to_move => {
+                    self.moves.push(Move::new(start_square, target_square))
+                }
+                _ => continue,
+            }
+        }
+    }
+
     fn precompute_move_data() -> [[usize; 8]; 64] {
         let mut num_squares_to_edge = [[0; 8]; 64];
         for file in 0..8 {
@@ -144,7 +180,7 @@ impl MoveGenerator {
 mod tests {
     use crate::board::Board;
     use crate::move_generation::{Move, MoveGenerator};
-    use crate::piece::Color;
+    use crate::piece::{Color, Piece};
     use crate::square::Square;
 
     #[test]
@@ -361,8 +397,75 @@ mod tests {
         move_generator.generate_sliding_moves(Square::A8.as_index());
 
         assert_eq!(move_generator.moves.len(), 3);
-        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::A7)));
-        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::B8)));
-        assert!(move_generator.moves.contains(&Move::from_square(Square::A8, Square::B7)));
+        assert!(move_generator
+            .moves
+            .contains(&Move::from_square(Square::A8, Square::A7)));
+        assert!(move_generator
+            .moves
+            .contains(&Move::from_square(Square::A8, Square::B8)));
+        assert!(move_generator
+            .moves
+            .contains(&Move::from_square(Square::A8, Square::B7)));
+    }
+
+    #[test]
+    fn test_generate_knight_moves_starting_position() {
+        let mut move_generator = MoveGenerator::default();
+        move_generator.generate_knight_moves(Square::B1.as_index());
+        move_generator.generate_knight_moves(Square::G1.as_index());
+
+        assert_eq!(move_generator.moves.len(), 4);
+        assert!(move_generator.generated_move(Square::B1, Square::A3));
+        assert!(move_generator.generated_move(Square::B1, Square::A3));
+        assert!(move_generator.generated_move(Square::B1, Square::C3));
+        assert!(move_generator.generated_move(Square::G1, Square::F3));
+        assert!(move_generator.generated_move(Square::G1, Square::H3));
+    }
+
+    #[test]
+    fn test_generate_knight_moves_from_corner() {
+        let mut board = Board::default();
+        board.put_piece(Square::A1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::B1.as_index(), Piece::Rook, Color::White);
+        board.put_piece(Square::H1.as_index(), Piece::Knight, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_knight_moves(Square::H1.as_index());
+
+        assert_eq!(move_generator.moves.len(), 2);
+        assert!(move_generator.generated_move(Square::H1, Square::F2));
+        assert!(move_generator.generated_move(Square::H1, Square::G3));
+    }
+
+    #[test]
+    fn test_generate_knight_moves_from_near_corner() {
+        let mut board = Board::default();
+        board.put_piece(Square::A1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::B1.as_index(), Piece::Rook, Color::White);
+        board.put_piece(Square::G2.as_index(), Piece::Knight, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_knight_moves(Square::G2.as_index());
+
+        assert_eq!(move_generator.moves.len(), 4);
+        assert!(move_generator.generated_move(Square::G2, Square::E1));
+        assert!(move_generator.generated_move(Square::G2, Square::E3));
+        assert!(move_generator.generated_move(Square::G2, Square::F4));
+        assert!(move_generator.generated_move(Square::G2, Square::H4));
+    }
+
+    #[test]
+    fn test_generate_knight_moves_with_pieces_on_target_square() {
+        let board = Board::from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
+        let mut move_generator = MoveGenerator::new(board);
+
+        move_generator.generate_knight_moves(Square::E5.as_index());
+        assert_eq!(move_generator.moves.len(), 4);
+        assert!(move_generator.generated_move(Square::E5, Square::C6));
+        assert!(move_generator.generated_move(Square::E5, Square::D3));
+        assert!(move_generator.generated_move(Square::E5, Square::G4));
+        assert!(move_generator.generated_move(Square::E5, Square::F7));
     }
 }

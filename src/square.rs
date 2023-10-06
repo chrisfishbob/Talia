@@ -4,7 +4,7 @@ use crate::board::BoardError;
 pub struct Sq(u8);
 
 
-// Enum for developer ergonomics, should never exist in runtime. 
+// Enum for developer ergonomics, should never exist in runtime (other than for FEN processing). 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Square {
     A1,
