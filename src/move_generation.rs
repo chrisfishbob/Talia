@@ -4,7 +4,7 @@ use crate::board::Board;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq)]
 pub struct Move {
     pub starting_square: usize,
     pub target_square: usize,
