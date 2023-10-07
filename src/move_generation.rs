@@ -172,10 +172,26 @@ impl MoveGenerator {
                     .push(Move::new(start_square, target_one_up_index as usize, None));
             } else {
                 // TODO: Handle promotion
-                self.moves.push(Move::new(start_square, target_one_up_index as usize, Some(Piece::Queen)));
-                self.moves.push(Move::new(start_square, target_one_up_index as usize, Some(Piece::Rook)));
-                self.moves.push(Move::new(start_square, target_one_up_index as usize, Some(Piece::Bishop)));
-                self.moves.push(Move::new(start_square, target_one_up_index as usize, Some(Piece::Knight)));
+                self.moves.push(Move::new(
+                    start_square,
+                    target_one_up_index as usize,
+                    Some(Piece::Queen),
+                ));
+                self.moves.push(Move::new(
+                    start_square,
+                    target_one_up_index as usize,
+                    Some(Piece::Rook),
+                ));
+                self.moves.push(Move::new(
+                    start_square,
+                    target_one_up_index as usize,
+                    Some(Piece::Bishop),
+                ));
+                self.moves.push(Move::new(
+                    start_square,
+                    target_one_up_index as usize,
+                    Some(Piece::Knight),
+                ));
             }
         }
 
@@ -251,7 +267,8 @@ impl MoveGenerator {
         target: Square,
         promotion_piece: Option<Piece>,
     ) -> bool {
-        self.moves.contains(&Move::from_square(start, target, promotion_piece))
+        self.moves
+            .contains(&Move::from_square(start, target, promotion_piece))
     }
 }
 
