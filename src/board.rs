@@ -397,9 +397,9 @@ mod tests {
         // TODO: Remove this manual value set when move increment in implemented
         starting_board.half_move_clock = 1;
         starting_board.full_move_number = 2;
-        starting_board.move_piece(Move::from_square(Square::E2, Square::E4));
-        starting_board.move_piece(Move::from_square(Square::C7, Square::C5));
-        starting_board.move_piece(Move::from_square(Square::G1, Square::F3));
+        starting_board.move_piece(Move::from_square(Square::E2, Square::E4, None));
+        starting_board.move_piece(Move::from_square(Square::C7, Square::C5, None));
+        starting_board.move_piece(Move::from_square(Square::G1, Square::F3, None));
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board =
@@ -563,11 +563,11 @@ mod tests {
     fn test_to_fen_italian_game() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4));
-        board.move_piece(Move::from_square(Square::E7, Square::E5));
-        board.move_piece(Move::from_square(Square::G1, Square::F3));
-        board.move_piece(Move::from_square(Square::B8, Square::C6));
-        board.move_piece(Move::from_square(Square::F1, Square::C4));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, None));
+        board.move_piece(Move::from_square(Square::E7, Square::E5, None));
+        board.move_piece(Move::from_square(Square::G1, Square::F3, None));
+        board.move_piece(Move::from_square(Square::B8, Square::C6, None));
+        board.move_piece(Move::from_square(Square::F1, Square::C4, None));
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 3;
         board.full_move_number = 3;
@@ -582,17 +582,17 @@ mod tests {
     fn test_to_fen_advanced_caro_kann() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4));
-        board.move_piece(Move::from_square(Square::C7, Square::C6));
-        board.move_piece(Move::from_square(Square::D2, Square::D4));
-        board.move_piece(Move::from_square(Square::D7, Square::D5));
-        board.move_piece(Move::from_square(Square::E4, Square::E5));
-        board.move_piece(Move::from_square(Square::C8, Square::F5));
-        board.move_piece(Move::from_square(Square::F1, Square::E2));
-        board.move_piece(Move::from_square(Square::E7, Square::E6));
-        board.move_piece(Move::from_square(Square::G1, Square::F3));
-        board.move_piece(Move::from_square(Square::C6, Square::C5));
-        board.move_piece(Move::from_square(Square::C1, Square::E3));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, None));
+        board.move_piece(Move::from_square(Square::C7, Square::C6, None));
+        board.move_piece(Move::from_square(Square::D2, Square::D4, None));
+        board.move_piece(Move::from_square(Square::D7, Square::D5, None));
+        board.move_piece(Move::from_square(Square::E4, Square::E5, None));
+        board.move_piece(Move::from_square(Square::C8, Square::F5, None));
+        board.move_piece(Move::from_square(Square::F1, Square::E2, None));
+        board.move_piece(Move::from_square(Square::E7, Square::E6, None));
+        board.move_piece(Move::from_square(Square::G1, Square::F3, None));
+        board.move_piece(Move::from_square(Square::C6, Square::C5, None));
+        board.move_piece(Move::from_square(Square::C1, Square::E3, None));
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 1;
         board.full_move_number = 6;
@@ -607,28 +607,28 @@ mod tests {
     fn test_to_fen_marshall_attack() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4));
-        board.move_piece(Move::from_square(Square::E7, Square::E5));
-        board.move_piece(Move::from_square(Square::G1, Square::F3));
-        board.move_piece(Move::from_square(Square::B8, Square::C6));
-        board.move_piece(Move::from_square(Square::F1, Square::B5));
-        board.move_piece(Move::from_square(Square::A7, Square::A6));
-        board.move_piece(Move::from_square(Square::B5, Square::A4));
-        board.move_piece(Move::from_square(Square::G8, Square::F6));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, None));
+        board.move_piece(Move::from_square(Square::E7, Square::E5, None));
+        board.move_piece(Move::from_square(Square::G1, Square::F3, None));
+        board.move_piece(Move::from_square(Square::B8, Square::C6, None));
+        board.move_piece(Move::from_square(Square::F1, Square::B5, None));
+        board.move_piece(Move::from_square(Square::A7, Square::A6, None));
+        board.move_piece(Move::from_square(Square::B5, Square::A4, None));
+        board.move_piece(Move::from_square(Square::G8, Square::F6, None));
         // TODO: Handle castling
-        board.move_piece(Move::from_square(Square::E1, Square::G1));
-        board.move_piece(Move::from_square(Square::H1, Square::F1));
+        board.move_piece(Move::from_square(Square::E1, Square::G1, None));
+        board.move_piece(Move::from_square(Square::H1, Square::F1, None));
         // end
-        board.move_piece(Move::from_square(Square::F8, Square::E7));
-        board.move_piece(Move::from_square(Square::F1, Square::E1));
-        board.move_piece(Move::from_square(Square::B7, Square::B5));
-        board.move_piece(Move::from_square(Square::A4, Square::B3));
+        board.move_piece(Move::from_square(Square::F8, Square::E7, None));
+        board.move_piece(Move::from_square(Square::F1, Square::E1, None));
+        board.move_piece(Move::from_square(Square::B7, Square::B5, None));
+        board.move_piece(Move::from_square(Square::A4, Square::B3, None));
         // TODO: Handle castling
-        board.move_piece(Move::from_square(Square::E8, Square::G8));
-        board.move_piece(Move::from_square(Square::H8, Square::F8));
+        board.move_piece(Move::from_square(Square::E8, Square::G8, None));
+        board.move_piece(Move::from_square(Square::H8, Square::F8, None));
         // end
-        board.move_piece(Move::from_square(Square::C2, Square::C3));
-        board.move_piece(Move::from_square(Square::D7, Square::D5));
+        board.move_piece(Move::from_square(Square::C2, Square::C3, None));
+        board.move_piece(Move::from_square(Square::D7, Square::D5, None));
 
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 0;

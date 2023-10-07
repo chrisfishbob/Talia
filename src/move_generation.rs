@@ -8,20 +8,23 @@ use crate::square::Square;
 pub struct Move {
     pub starting_square: usize,
     pub target_square: usize,
+    pub promotion_piece: Option<Piece>,
 }
 
 impl Move {
-    pub fn new(starting_square: usize, target_square: usize) -> Self {
+    pub fn new(start: usize, target: usize, promotion_piece: Option<Piece>) -> Self {
         Self {
-            starting_square,
-            target_square,
+            starting_square: start,
+            target_square: target,
+            promotion_piece,
         }
     }
 
-    pub fn from_square(starting_square: Square, target_square: Square) -> Self {
+    pub fn from_square(start: Square, target: Square, promotion_piece: Option<Piece>) -> Self {
         Self {
-            starting_square: starting_square as usize,
-            target_square: target_square as usize,
+            starting_square: start as usize,
+            target_square: target as usize,
+            promotion_piece,
         }
     }
 }
@@ -101,14 +104,16 @@ impl MoveGenerator {
                 match color_on_target_square {
                     Some(color) => {
                         if color != self.board.to_move {
-                            self.moves.push(Move::new(start_square, target_square));
+                            self.moves
+                                .push(Move::new(start_square, target_square, None));
                         }
                         // Blocked by friendly piece, cannot go on further.
                         break;
                     }
                     None => {
                         // No piece on the current square, keep generating moves
-                        self.moves.push(Move::new(start_square, target_square));
+                        self.moves
+                            .push(Move::new(start_square, target_square, None));
                     }
                 }
             }
@@ -137,9 +142,12 @@ impl MoveGenerator {
             let target_square = target_square as usize;
 
             match self.board.colors[target_square] {
-                None => self.moves.push(Move::new(start_square, target_square)),
+                None => self
+                    .moves
+                    .push(Move::new(start_square, target_square, None)),
                 Some(color) if color != self.board.to_move => {
-                    self.moves.push(Move::new(start_square, target_square))
+                    self.moves
+                        .push(Move::new(start_square, target_square, None))
                 }
                 _ => continue,
             }
@@ -160,7 +168,7 @@ impl MoveGenerator {
             let is_promotion_move = target_one_up_rank == 0 || target_one_up_rank == 7;
             if !is_promotion_move {
                 self.moves
-                    .push(Move::new(start_square, target_one_up_index as usize));
+                    .push(Move::new(start_square, target_one_up_index as usize, None));
             } else {
                 // TODO: Handle promotion
             }
@@ -180,7 +188,7 @@ impl MoveGenerator {
                 && (target_file - starting_file).abs() == 1
             {
                 self.moves
-                    .push(Move::new(start_square, capture_index as usize));
+                    .push(Move::new(start_square, capture_index as usize, None));
             }
         }
 
@@ -200,7 +208,7 @@ impl MoveGenerator {
         let target_two_up_index = start_square as isize + pawn_move_offsets[1];
         if self.board.squares[target_two_up_index as usize].is_none() {
             self.moves
-                .push(Move::new(start_square, target_two_up_index as usize));
+                .push(Move::new(start_square, target_two_up_index as usize, None));
         }
     }
 
@@ -234,7 +242,7 @@ impl MoveGenerator {
     #[cfg(test)]
     fn generated_move(&self, starting_square: Square, target_square: Square) -> bool {
         self.moves
-            .contains(&Move::from_square(starting_square, target_square))
+            .contains(&Move::from_square(starting_square, target_square, None))
     }
 }
 
@@ -298,7 +306,7 @@ mod tests {
         let mut move_generator = MoveGenerator::default();
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E2, Square::E4));
+            .move_piece(Move::from_square(Square::E2, Square::E4, None));
         // TODO: Remove this when move_piece handles this
         move_generator.board.to_move = Color::Black;
 
@@ -315,10 +323,10 @@ mod tests {
         let mut move_generator = MoveGenerator::default();
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E2, Square::E4));
+            .move_piece(Move::from_square(Square::E2, Square::E4, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E7, Square::E5));
+            .move_piece(Move::from_square(Square::E7, Square::E5, None));
 
         move_generator.generate_sliding_moves(Square::A1.as_index());
         move_generator.generate_sliding_moves(Square::C1.as_index());
@@ -343,13 +351,13 @@ mod tests {
         let mut move_generator = MoveGenerator::default();
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E2, Square::E4));
+            .move_piece(Move::from_square(Square::E2, Square::E4, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E7, Square::E5));
+            .move_piece(Move::from_square(Square::E7, Square::E5, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::G1, Square::F3));
+            .move_piece(Move::from_square(Square::G1, Square::F3, None));
         // TODO: Remove this when move_piece handles this
         move_generator.board.to_move = Color::Black;
 
@@ -376,16 +384,16 @@ mod tests {
         let mut move_generator = MoveGenerator::default();
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E2, Square::E4));
+            .move_piece(Move::from_square(Square::E2, Square::E4, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::E7, Square::E5));
+            .move_piece(Move::from_square(Square::E7, Square::E5, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::G1, Square::F3));
+            .move_piece(Move::from_square(Square::G1, Square::F3, None));
         move_generator
             .board
-            .move_piece(Move::from_square(Square::B8, Square::C6));
+            .move_piece(Move::from_square(Square::B8, Square::C6, None));
 
         move_generator.generate_sliding_moves(Square::A1.as_index());
         move_generator.generate_sliding_moves(Square::C1.as_index());
@@ -513,7 +521,7 @@ mod tests {
     #[test]
     fn test_generate_pawn_moves_from_starting_position_black() {
         let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::E2, Square::E4));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, None));
         let mut move_generator = MoveGenerator::new(board);
 
         for square in 0..64 {
@@ -742,8 +750,8 @@ mod tests {
     #[test]
     fn test_already_moved_pawn_white() {
         let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::E2, Square::E4));
-        board.move_piece(Move::from_square(Square::G8, Square::F6));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, None));
+        board.move_piece(Move::from_square(Square::G8, Square::F6, None));
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E4.as_index());
@@ -755,9 +763,9 @@ mod tests {
     #[test]
     fn test_already_moved_pawn_black() {
         let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::H2, Square::H4));
-        board.move_piece(Move::from_square(Square::E7, Square::E5));
-        board.move_piece(Move::from_square(Square::H4, Square::H5));
+        board.move_piece(Move::from_square(Square::H2, Square::H4, None));
+        board.move_piece(Move::from_square(Square::E7, Square::E5, None));
+        board.move_piece(Move::from_square(Square::H4, Square::H5, None));
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E5.as_index());
