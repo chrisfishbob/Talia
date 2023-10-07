@@ -73,10 +73,11 @@ impl MoveGenerator {
             }
 
             let piece = piece.expect("Piece should not be None if color exists");
-            if piece.is_sliding_piece() {
-                self.generate_sliding_moves(square);
-            } else if piece == Piece::Knight {
-                self.generate_knight_moves(square);
+            match piece {
+                Piece::Queen | Piece::Rook | Piece::Bishop => self.generate_sliding_moves(square),
+                Piece::Knight => self.generate_knight_moves(square),
+                Piece::Pawn => self.generate_pawn_moves(square),
+                _ => (),
             }
         }
 
@@ -142,6 +143,16 @@ impl MoveGenerator {
                 }
                 _ => continue,
             }
+        }
+    }
+
+    fn generate_pawn_moves(&mut self, start_square: usize) {
+        if self.board.squares[start_square + 8].is_none() {
+            self.moves.push(Move::new(start_square, start_square + 8));
+        }
+
+        if self.board.squares[start_square + 16].is_none() {
+            self.moves.push(Move::new(start_square, start_square + 16));
         }
     }
 
@@ -416,5 +427,38 @@ mod tests {
         assert!(move_generator.generated_move(Square::E5, Square::D3));
         assert!(move_generator.generated_move(Square::E5, Square::G4));
         assert!(move_generator.generated_move(Square::E5, Square::F7));
+    }
+
+    #[test]
+    fn test_generate_pawn_moves_from_starting_position() {
+        let mut move_generator = MoveGenerator::default();
+
+        for square in 0..64 {
+            if move_generator.board.is_piece_at_square(
+                square,
+                Piece::Pawn,
+                move_generator.board.to_move,
+            ) {
+                move_generator.generate_pawn_moves(square);
+            }
+        }
+
+        assert_eq!(move_generator.moves.len(), 16);
+        assert!(move_generator.generated_move(Square::A2, Square::A3));
+        assert!(move_generator.generated_move(Square::A2, Square::A4));
+        assert!(move_generator.generated_move(Square::B2, Square::B3));
+        assert!(move_generator.generated_move(Square::B2, Square::B4));
+        assert!(move_generator.generated_move(Square::C2, Square::C3));
+        assert!(move_generator.generated_move(Square::C2, Square::C4));
+        assert!(move_generator.generated_move(Square::D2, Square::D3));
+        assert!(move_generator.generated_move(Square::D2, Square::D4));
+        assert!(move_generator.generated_move(Square::E2, Square::E3));
+        assert!(move_generator.generated_move(Square::E2, Square::E4));
+        assert!(move_generator.generated_move(Square::F2, Square::F3));
+        assert!(move_generator.generated_move(Square::F2, Square::F4));
+        assert!(move_generator.generated_move(Square::G2, Square::G3));
+        assert!(move_generator.generated_move(Square::G2, Square::G4));
+        assert!(move_generator.generated_move(Square::H2, Square::H3));
+        assert!(move_generator.generated_move(Square::H2, Square::H4));
     }
 }
