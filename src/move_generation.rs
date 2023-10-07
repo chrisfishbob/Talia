@@ -1,7 +1,7 @@
 use core::fmt;
 
 use crate::board::Board;
-use crate::piece::{Piece, Color};
+use crate::piece::{Color, Piece};
 use crate::square::Square;
 
 #[derive(Eq, PartialEq, Hash)]
@@ -147,51 +147,61 @@ impl MoveGenerator {
     }
 
     fn generate_pawn_moves(&mut self, start_square: usize) {
-        // TODO: Handle black color 
         let pawn_move_offsets = match self.board.to_move {
             Color::White => [8, 16, 7, 9],
             Color::Black => [-8, -16, -7, -9],
         };
 
         let target_one_up_index = start_square as isize + pawn_move_offsets[0];
-        // If going up one rank results in going out of bounds, none of the other
-        // moves are possible, so return early
-        if !(0..64).contains(&target_one_up_index) {
+        let target_one_up_rank = target_one_up_index / 8;
+        let can_move_up_one_rank = self.board.squares[target_one_up_index as usize].is_none();
+
+        if can_move_up_one_rank {
+            let is_promotion_move = target_one_up_rank == 0 || target_one_up_rank == 7;
+            if !is_promotion_move {
+                self.moves
+                    .push(Move::new(start_square, target_one_up_index as usize));
+            } else {
+                // TODO: Handle promotion
+            }
+        }
+
+        // NOTE: Captures can also result in promotion
+        // // Check if either captures are available
+        for capture_offset in &pawn_move_offsets[2..] {
+            let capture_index = start_square as isize + capture_offset;
+            let starting_file = start_square as isize % 8;
+            let target_file = capture_index % 8;
+
+            if self.board.colors[capture_index as usize]
+                .is_some_and(|color| color != self.board.to_move)
+                // Prevents the pawn from teleporting from one side to another Pacman-style
+                // and the +-7 capture offset being incorrect for A and H pawns 
+                && (target_file - starting_file).abs() == 1
+            {
+                self.moves
+                    .push(Move::new(start_square, capture_index as usize));
+            }
+        }
+
+        // If a pawn cannot move one square up, it definitely cannot move up by two
+        if !can_move_up_one_rank {
             return;
         }
 
-        let target_one_up_index = target_one_up_index as usize;
-        if self.board.squares[target_one_up_index].is_none() {
-            self.moves.push(Move::new(start_square, target_one_up_index));
+        // If pawn already moved, it cannot move up by two
+        let starting_rank = start_square / 8;
+        let has_moved = (starting_rank != 1 && self.board.to_move == Color::White)
+            || (starting_rank != 6 && self.board.to_move == Color::Black);
+        if has_moved {
+            return;
         }
 
         let target_two_up_index = start_square as isize + pawn_move_offsets[1];
-        if !(0..64).contains(&target_two_up_index) {
-            return;
+        if self.board.squares[target_two_up_index as usize].is_none() {
+            self.moves
+                .push(Move::new(start_square, target_two_up_index as usize));
         }
-
-        let target_two_up_index = target_two_up_index as usize;
-        if self.board.squares[target_two_up_index].is_none() {
-            self.moves.push(Move::new(start_square, target_two_up_index));
-        }
-
-        // if self.board.squares[start_square + 16].is_none() {
-        //     self.moves.push(Move::new(start_square, start_square + 16));
-        // }
-
-        // match self.board.colors[start_square + 7] {
-        //     Some(color) if color != self.board.to_move => {
-        //         self.moves.push(Move::new(start_square, start_square + 7))
-        //     }
-        //     _ => (),
-        // }
-
-        // match self.board.colors[start_square + 9] {
-        //     Some(color) if color != self.board.to_move => {
-        //         self.moves.push(Move::new(start_square, start_square + 9))
-        //     }
-        //     _ => (),
-        // }
     }
 
     fn precompute_move_data() -> [[usize; 8]; 64] {
@@ -468,7 +478,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pawn_moves_from_starting_position() {
+    fn test_generate_pawn_moves_from_starting_position_white() {
         let mut move_generator = MoveGenerator::default();
 
         for square in 0..64 {
@@ -533,5 +543,226 @@ mod tests {
         assert!(move_generator.generated_move(Square::G7, Square::G5));
         assert!(move_generator.generated_move(Square::H7, Square::H5));
         assert!(move_generator.generated_move(Square::H7, Square::H5));
+    }
+
+    #[test]
+    fn test_pawn_move_with_piece_blocking_white() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        // Tests that opposite color pieces block movement
+        board.put_piece(Square::F4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::F5.as_index(), Piece::Knight, Color::Black);
+        // Tests that same color pieces also block movement
+        board.put_piece(Square::C4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::C5.as_index(), Piece::Knight, Color::White);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::F4.as_index());
+        move_generator.generate_pawn_moves(Square::C4.as_index());
+
+        dbg!(&move_generator.moves);
+        assert_eq!(move_generator.moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_move_with_piece_blocking_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        // Tests that opposite color pieces block movement
+        board.put_piece(Square::F5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::F4.as_index(), Piece::Knight, Color::White);
+        // Tests that same color pieces also block movement
+        board.put_piece(Square::C5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::C4.as_index(), Piece::Knight, Color::Black);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::F5.as_index());
+        move_generator.generate_pawn_moves(Square::C5.as_index());
+
+        assert_eq!(move_generator.moves.len(), 0);
+    }
+
+    #[test]
+    fn test_pawn_with_second_rank_blocked_white() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        board.put_piece(Square::E2.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E2.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::E2, Square::E3));
+    }
+
+    #[test]
+    fn test_pawn_with_second_rank_blocked_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::White);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E7.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::E7, Square::E6));
+    }
+
+    #[test]
+    fn test_pawn_both_captures_in_center_white() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::D5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::F5.as_index(), Piece::Pawn, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E4.as_index());
+
+        assert_eq!(move_generator.moves.len(), 2);
+        assert!(move_generator.generated_move(Square::E4, Square::D5));
+        assert!(move_generator.generated_move(Square::E4, Square::F5));
+    }
+
+    #[test]
+    fn test_pawn_both_captures_in_center_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::D4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::F4.as_index(), Piece::Pawn, Color::White);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E5.as_index());
+
+        assert_eq!(move_generator.moves.len(), 2);
+        assert!(move_generator.generated_move(Square::E5, Square::F4));
+        assert!(move_generator.generated_move(Square::E5, Square::D4));
+    }
+
+    #[test]
+    fn test_pawn_no_pacman_white() {
+        // If pacman behavior exists, a capture offset of 9 for a pawn at the
+        // 7th file will result in a square in the 0th file to become the target
+        // square.
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::H4.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::G5.as_index(), Piece::Pawn, Color::Black);
+        // If the pacman behavior exists, the A6 pawn would be a target square
+        board.put_piece(Square::A6.as_index(), Piece::Pawn, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::H4.as_index());
+
+        assert_eq!(move_generator.moves.len(), 2);
+        assert!(move_generator.generated_move(Square::H4, Square::G5));
+        assert!(move_generator.generated_move(Square::H4, Square::H5));
+    }
+
+    #[test]
+    fn test_pawn_no_pacman_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::A5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::B4.as_index(), Piece::Pawn, Color::White);
+        // If anti-pacman behavior exists, the H3 pawn would be a target square
+        board.put_piece(Square::H3.as_index(), Piece::Pawn, Color::White);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::A5.as_index());
+
+        assert_eq!(move_generator.moves.len(), 2);
+        assert!(move_generator.generated_move(Square::A5, Square::B4));
+        assert!(move_generator.generated_move(Square::A5, Square::A4));
+    }
+
+    #[test]
+    fn test_pawn_no_anti_pacman_white() {
+        // If anti-pacman behavior exists, a capture offset for a pawn at the 0th
+        // file will result in the square on the 8th file on the same rank to become
+        // the target square.
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::A3.as_index(), Piece::Pawn, Color::White);
+        // If the pacman behavior exists, the A6 pawn would be a target square
+        board.put_piece(Square::H3.as_index(), Piece::Pawn, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::A3.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::A3, Square::A4));
+    }
+
+    #[test]
+    fn test_pawn_no_anti_pacman_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+
+        board.put_piece(Square::H5.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::A5.as_index(), Piece::Pawn, Color::White);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::H5.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::H5, Square::H4));
+    }
+
+    #[test]
+    fn test_already_moved_pawn_white() {
+        let mut board = Board::starting_position();
+        board.move_piece(Move::from_square(Square::E2, Square::E4));
+        board.move_piece(Move::from_square(Square::G8, Square::F6));
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E4.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::E4, Square::E5));
+    }
+
+    #[test]
+    fn test_already_moved_pawn_black() {
+        let mut board = Board::starting_position();
+        board.move_piece(Move::from_square(Square::H2, Square::H4));
+        board.move_piece(Move::from_square(Square::E7, Square::E5));
+        board.move_piece(Move::from_square(Square::H4, Square::H5));
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E5.as_index());
+
+        assert_eq!(move_generator.moves.len(), 1);
+        assert!(move_generator.generated_move(Square::E5, Square::E4));
     }
 }
