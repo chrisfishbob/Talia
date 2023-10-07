@@ -33,11 +33,15 @@ impl fmt::Debug for Move {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
-            "starting_square: {:?}, target_square: {:?}, promotion_piece: {:?}",
+            "starting_square: {:?}, target_square: {:?}",
             Square::from_index(self.starting_square),
             Square::from_index(self.target_square),
-            self.promotion_piece,
-        )
+        )?;
+        if let Some(piece) = self.promotion_piece {
+            write!(f, ", promotion_piece: {:?}", piece)
+        } else {
+            Ok(())
+        }
     }
 }
 
@@ -166,32 +170,20 @@ impl MoveGenerator {
         let can_move_up_one_rank = self.board.squares[target_one_up_index as usize].is_none();
 
         if can_move_up_one_rank {
+            let target_one_up_index = target_one_up_index as usize;
             let is_promotion_move = target_one_up_rank == 0 || target_one_up_rank == 7;
             if !is_promotion_move {
                 self.moves
-                    .push(Move::new(start_square, target_one_up_index as usize, None));
+                    .push(Move::new(start_square, target_one_up_index, None));
             } else {
-                // TODO: Handle promotion
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index as usize,
-                    Some(Piece::Queen),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index as usize,
-                    Some(Piece::Rook),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index as usize,
-                    Some(Piece::Bishop),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index as usize,
-                    Some(Piece::Knight),
-                ));
+                self.moves
+                    .push(Move::new(start_square, target_one_up_index, Some(Piece::Queen)));
+                self.moves
+                    .push(Move::new(start_square, target_one_up_index, Some(Piece::Rook)));
+                self.moves
+                    .push(Move::new(start_square, target_one_up_index, Some(Piece::Bishop)));
+                self.moves
+                    .push(Move::new(start_square, target_one_up_index, Some(Piece::Knight)));
             }
         }
 
