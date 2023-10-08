@@ -49,6 +49,7 @@ impl fmt::Debug for Move {
 pub enum Flag {
     None,
     Castle,
+    PawnDoublePush,
     PromoteTo(Piece),
 }
 
@@ -227,8 +228,11 @@ impl MoveGenerator {
 
         let target_two_up_index = start_square as isize + pawn_move_offsets[1];
         if self.board.squares[target_two_up_index as usize].is_none() {
-            self.moves
-                .push(Move::new(start_square, target_two_up_index as usize, Flag::None));
+            self.moves.push(Move::new(
+                start_square,
+                target_two_up_index as usize,
+                Flag::PawnDoublePush,
+            ));
         }
     }
 
@@ -260,11 +264,14 @@ impl MoveGenerator {
     }
 
     fn add_promotion_moves(&mut self, start: usize, target: usize) {
-        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Queen)));
-        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Rook)));
-        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
-        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
-
+        self.moves
+            .push(Move::new(start, target, Flag::PromoteTo(Piece::Queen)));
+        self.moves
+            .push(Move::new(start, target, Flag::PromoteTo(Piece::Rook)));
+        self.moves
+            .push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
+        self.moves
+            .push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
     }
 
     #[cfg(test)]
@@ -528,21 +535,21 @@ mod tests {
 
         assert_eq!(move_generator.moves.len(), 16);
         assert!(move_generator.generated_move(Square::A2, Square::A3, Flag::None));
-        assert!(move_generator.generated_move(Square::A2, Square::A4, Flag::None));
+        assert!(move_generator.generated_move(Square::A2, Square::A4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::B2, Square::B3, Flag::None));
-        assert!(move_generator.generated_move(Square::B2, Square::B4, Flag::None));
+        assert!(move_generator.generated_move(Square::B2, Square::B4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::C2, Square::C3, Flag::None));
-        assert!(move_generator.generated_move(Square::C2, Square::C4, Flag::None));
+        assert!(move_generator.generated_move(Square::C2, Square::C4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::D2, Square::D3, Flag::None));
-        assert!(move_generator.generated_move(Square::D2, Square::D4, Flag::None));
+        assert!(move_generator.generated_move(Square::D2, Square::D4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::E2, Square::E3, Flag::None));
-        assert!(move_generator.generated_move(Square::E2, Square::E4, Flag::None));
+        assert!(move_generator.generated_move(Square::E2, Square::E4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::F2, Square::F3, Flag::None));
-        assert!(move_generator.generated_move(Square::F2, Square::F4, Flag::None));
+        assert!(move_generator.generated_move(Square::F2, Square::F4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::G2, Square::G3, Flag::None));
-        assert!(move_generator.generated_move(Square::G2, Square::G4, Flag::None));
+        assert!(move_generator.generated_move(Square::G2, Square::G4, Flag::PawnDoublePush));
         assert!(move_generator.generated_move(Square::H2, Square::H3, Flag::None));
-        assert!(move_generator.generated_move(Square::H2, Square::H4, Flag::None));
+        assert!(move_generator.generated_move(Square::H2, Square::H4, Flag::PawnDoublePush));
     }
 
     #[test]
@@ -562,22 +569,22 @@ mod tests {
         }
 
         assert_eq!(move_generator.moves.len(), 16);
-        assert!(move_generator.generated_move(Square::A7, Square::A5, Flag::None));
-        assert!(move_generator.generated_move(Square::A7, Square::A5, Flag::None));
-        assert!(move_generator.generated_move(Square::B7, Square::B5, Flag::None));
-        assert!(move_generator.generated_move(Square::B7, Square::B5, Flag::None));
-        assert!(move_generator.generated_move(Square::C7, Square::C5, Flag::None));
-        assert!(move_generator.generated_move(Square::C7, Square::C5, Flag::None));
-        assert!(move_generator.generated_move(Square::D7, Square::D5, Flag::None));
-        assert!(move_generator.generated_move(Square::D7, Square::D5, Flag::None));
-        assert!(move_generator.generated_move(Square::E7, Square::E5, Flag::None));
-        assert!(move_generator.generated_move(Square::E7, Square::E5, Flag::None));
-        assert!(move_generator.generated_move(Square::F7, Square::F5, Flag::None));
-        assert!(move_generator.generated_move(Square::F7, Square::F5, Flag::None));
-        assert!(move_generator.generated_move(Square::G7, Square::G5, Flag::None));
-        assert!(move_generator.generated_move(Square::G7, Square::G5, Flag::None));
-        assert!(move_generator.generated_move(Square::H7, Square::H5, Flag::None));
-        assert!(move_generator.generated_move(Square::H7, Square::H5, Flag::None));
+        assert!(move_generator.generated_move(Square::A7, Square::A5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::A7, Square::A6, Flag::None));
+        assert!(move_generator.generated_move(Square::B7, Square::B5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::B7, Square::B6, Flag::None));
+        assert!(move_generator.generated_move(Square::C7, Square::C5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::C7, Square::C6, Flag::None));
+        assert!(move_generator.generated_move(Square::D7, Square::D5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::D7, Square::D6, Flag::None));
+        assert!(move_generator.generated_move(Square::E7, Square::E5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::E7, Square::E6, Flag::None));
+        assert!(move_generator.generated_move(Square::F7, Square::F5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::F7, Square::F6, Flag::None));
+        assert!(move_generator.generated_move(Square::G7, Square::G5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::G7, Square::G6, Flag::None));
+        assert!(move_generator.generated_move(Square::H7, Square::H5, Flag::PawnDoublePush));
+        assert!(move_generator.generated_move(Square::H7, Square::H6, Flag::None));
     }
 
     #[test]
@@ -882,10 +889,26 @@ mod tests {
         move_generator.generate_pawn_moves(Square::E7.as_index());
 
         assert_eq!(move_generator.moves.len(), 4);
-        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Queen)));
-        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Rook)));
-        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Bishop)));
-        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Knight)));
+        assert!(move_generator.generated_move(
+            Square::E7,
+            Square::D8,
+            Flag::PromoteTo(Piece::Queen)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E7,
+            Square::D8,
+            Flag::PromoteTo(Piece::Rook)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E7,
+            Square::D8,
+            Flag::PromoteTo(Piece::Bishop)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E7,
+            Square::D8,
+            Flag::PromoteTo(Piece::Knight)
+        ));
     }
 
     #[test]
@@ -903,9 +926,25 @@ mod tests {
         move_generator.generate_pawn_moves(Square::E2.as_index());
 
         assert_eq!(move_generator.moves.len(), 4);
-        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Queen)));
-        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Rook)));
-        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Bishop)));
-        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Knight)));
+        assert!(move_generator.generated_move(
+            Square::E2,
+            Square::D1,
+            Flag::PromoteTo(Piece::Queen)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E2,
+            Square::D1,
+            Flag::PromoteTo(Piece::Rook)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E2,
+            Square::D1,
+            Flag::PromoteTo(Piece::Bishop)
+        ));
+        assert!(move_generator.generated_move(
+            Square::E2,
+            Square::D1,
+            Flag::PromoteTo(Piece::Knight)
+        ));
     }
 }
