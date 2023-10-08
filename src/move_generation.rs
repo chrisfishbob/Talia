@@ -183,26 +183,7 @@ impl MoveGenerator {
                 self.moves
                     .push(Move::new(start_square, target_one_up_index, Flag::None));
             } else {
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index,
-                    Flag::PromoteTo(Piece::Queen),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index,
-                    Flag::PromoteTo(Piece::Rook),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index,
-                    Flag::PromoteTo(Piece::Bishop),
-                ));
-                self.moves.push(Move::new(
-                    start_square,
-                    target_one_up_index,
-                    Flag::PromoteTo(Piece::Knight),
-                ));
+                self.add_promotion_moves(start_square, target_one_up_index);
             }
         }
 
@@ -219,8 +200,15 @@ impl MoveGenerator {
                 // and the +-7 capture offset being incorrect for A and H pawns 
                 && (target_file - starting_file).abs() == 1
             {
-                self.moves
-                    .push(Move::new(start_square, capture_index as usize, Flag::None));
+                let target_rank = capture_index / 8;
+                let is_promotion_move = target_rank == 0 || target_rank == 7;
+
+                if is_promotion_move {
+                    self.add_promotion_moves(start_square, capture_index as usize);
+                } else {
+                    self.moves
+                        .push(Move::new(start_square, capture_index as usize, Flag::None));
+                }
             }
         }
 
@@ -269,6 +257,14 @@ impl MoveGenerator {
         }
 
         num_squares_to_edge
+    }
+
+    fn add_promotion_moves(&mut self, start: usize, target: usize) {
+        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Queen)));
+        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Rook)));
+        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
+        self.moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
+
     }
 
     #[cfg(test)]
@@ -871,5 +867,45 @@ mod tests {
             Square::E1,
             Flag::PromoteTo(Piece::Knight)
         ));
+    }
+
+    #[test]
+    fn test_promotion_pawn_capture_with_promotion_white() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::White);
+        board.put_piece(Square::E8.as_index(), Piece::Knight, Color::Black);
+        board.put_piece(Square::D8.as_index(), Piece::Queen, Color::Black);
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E7.as_index());
+
+        assert_eq!(move_generator.moves.len(), 4);
+        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Queen)));
+        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Rook)));
+        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Bishop)));
+        assert!(move_generator.generated_move(Square::E7, Square::D8, Flag::PromoteTo(Piece::Knight)));
+    }
+
+    #[test]
+    fn test_promotion_pawn_capture_with_promotion_black() {
+        let mut board = Board::default();
+        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
+        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        board.put_piece(Square::E2.as_index(), Piece::Pawn, Color::Black);
+        board.put_piece(Square::E1.as_index(), Piece::Knight, Color::White);
+        board.put_piece(Square::D1.as_index(), Piece::Queen, Color::White);
+
+        board.to_move = Color::Black;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::E2.as_index());
+
+        assert_eq!(move_generator.moves.len(), 4);
+        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Queen)));
+        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Rook)));
+        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Bishop)));
+        assert!(move_generator.generated_move(Square::E2, Square::D1, Flag::PromoteTo(Piece::Knight)));
     }
 }
