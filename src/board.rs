@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::move_generation::Move;
+use crate::move_generation::{Flag, Move};
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 use std::{error, fmt};
@@ -261,6 +261,8 @@ impl Board {
             fen.push('-')
         }
 
+        // TODO: Should Talia support the newer FEN spec where en passant squares are only listed
+        // if a opposite-color pawn is there to actually capture it?
         fen.push(' ');
         match self.en_passant_square {
             None => fen.push('-'),
@@ -291,7 +293,7 @@ impl Board {
         }
 
         Ok(Some(
-            Square::from_algebraic_notation(en_passant_sqaure_field)?.as_index()
+            Square::from_algebraic_notation(en_passant_sqaure_field)?.as_index(),
         ))
     }
 
@@ -299,6 +301,9 @@ impl Board {
     // TODO: Handle en passant, castling, promotion, ...
     // TODO: Handle move increment
     pub fn move_piece(&mut self, mv: Move) {
+        // With every move, the ability to en passant expires until a double pawn push
+        self.en_passant_square = None;
+
         let starting_piece = self.squares[mv.starting_square];
         let starting_piece_color = self.colors[mv.starting_square];
         self.squares[mv.target_square] = starting_piece;
@@ -306,7 +311,13 @@ impl Board {
         self.squares[mv.starting_square] = None;
         self.colors[mv.starting_square] = None;
 
-        if let Color::White = self.to_move {
+        if mv.flag == Flag::PawnDoublePush {
+            let pawn_one_move_offset = if self.to_move == Color::White { 8 } else { -8 };
+            let en_passant_index = mv.starting_square as isize + pawn_one_move_offset;
+            self.en_passant_square = Some(en_passant_index as usize)
+        }
+
+        if self.to_move == Color::White {
             self.to_move = Color::Black;
         } else {
             self.to_move = Color::White;
@@ -334,7 +345,7 @@ impl Board {
 mod tests {
     use crate::{
         board::{Board, Square},
-        move_generation::{Move, Flag},
+        move_generation::{Flag, Move},
         piece::{Color, Piece},
     };
 
@@ -397,8 +408,8 @@ mod tests {
         // TODO: Remove this manual value set when move increment in implemented
         starting_board.half_move_clock = 1;
         starting_board.full_move_number = 2;
-        starting_board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        starting_board.move_piece(Move::from_square(Square::C7, Square::C5, Flag::None));
+        starting_board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
+        starting_board.move_piece(Move::from_square(Square::C7, Square::C5, Flag::PawnDoublePush));
         starting_board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
 
         // Position after 1. e4, c5 => 2. Nf3
@@ -563,8 +574,8 @@ mod tests {
     fn test_to_fen_italian_game() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::None));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
+        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
         board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
         board.move_piece(Move::from_square(Square::B8, Square::C6, Flag::None));
         board.move_piece(Move::from_square(Square::F1, Square::C4, Flag::None));
@@ -582,10 +593,10 @@ mod tests {
     fn test_to_fen_advanced_caro_kann() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
         board.move_piece(Move::from_square(Square::C7, Square::C6, Flag::None));
-        board.move_piece(Move::from_square(Square::D2, Square::D4, Flag::None));
-        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::None));
+        board.move_piece(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush));
+        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush));
         board.move_piece(Move::from_square(Square::E4, Square::E5, Flag::None));
         board.move_piece(Move::from_square(Square::C8, Square::F5, Flag::None));
         board.move_piece(Move::from_square(Square::F1, Square::E2, Flag::None));
@@ -607,8 +618,8 @@ mod tests {
     fn test_to_fen_marshall_attack() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::None));
+        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
+        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
         board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
         board.move_piece(Move::from_square(Square::B8, Square::C6, Flag::None));
         board.move_piece(Move::from_square(Square::F1, Square::B5, Flag::None));
@@ -628,7 +639,7 @@ mod tests {
         board.move_piece(Move::from_square(Square::H8, Square::F8, Flag::None));
         // end
         board.move_piece(Move::from_square(Square::C2, Square::C3, Flag::None));
-        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::None));
+        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush));
 
         // TODO: Remove this manual value set when move increment in implemented
         board.half_move_clock = 0;
@@ -642,7 +653,25 @@ mod tests {
 
         assert_eq!(
             board.to_fen(),
-            "r1bq1rk1/2p1bppp/p1n2n2/1p1pp3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - - 0 9"
+            "r1bq1rk1/2p1bppp/p1n2n2/1p1pp3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - d6 0 9"
         )
+    }
+
+    #[test]
+    fn test_move_piece_registers_en_passant_square() {
+        let mut board = Board::starting_position();
+
+        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
+        assert!(board
+            .en_passant_square
+            .is_some_and(|square| square == Square::E3.as_index()));
+
+        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
+        assert!(board
+            .en_passant_square
+            .is_some_and(|square| square == Square::E6.as_index()));
+
+        board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
+        assert!(board.en_passant_square.is_none());
     }
 }
