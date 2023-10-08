@@ -658,7 +658,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_piece_registers_en_passant_square() {
+    fn test_pawn_double_push_registers_en_passant_square() {
         let mut board = Board::starting_position();
 
         board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
