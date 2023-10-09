@@ -1,7 +1,7 @@
-use std::collections::HashSet;
 use crate::board::{Board, BoardError};
 use crate::piece::{Color, Piece};
 use crate::square::Square;
+use std::collections::HashSet;
 
 pub struct BoardBuilder {
     board: Board,
@@ -27,7 +27,6 @@ impl BoardBuilder {
     pub fn can_king_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
             self.board.can_black_king_side_castle = castle;
-
         } else {
             self.board.can_white_king_side_castle = castle;
         }
@@ -37,7 +36,6 @@ impl BoardBuilder {
     pub fn can_queen_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
             self.board.can_black_queen_side_castle = castle;
-
         } else {
             self.board.can_white_queen_side_castle = castle;
         }
@@ -58,7 +56,6 @@ impl BoardBuilder {
         self.board.full_move_number = number;
         self
     }
-
 
     pub fn from_fen(fen: &str) -> Result<Board, BoardError> {
         // 0: board arrangement
@@ -157,10 +154,13 @@ impl BoardBuilder {
             Square::from_algebraic_notation(en_passant_sqaure_field)?.as_index(),
         ))
     }
+}
 
-    // TODO: Add checks for invalid board states
-    pub fn build(self) -> Board {
-        self.board
+impl TryInto<Board> for BoardBuilder {
+    type Error = BoardError;
+    fn try_into(self) -> Result<Board, Self::Error> {
+        // TODO: Add checks for invalid board states
+        Ok(self.board)
     }
 }
 
@@ -280,6 +280,4 @@ mod tests {
         assert!(index.is_err());
         assert_eq!(index.err().unwrap().to_string(), "Invalid square string: hh")
     }
-
-
 }

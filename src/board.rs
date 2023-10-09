@@ -324,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_from_puzzle_fen() {
-        let board = BoardBuilder::new()
+        let board: Board = BoardBuilder::new()
             .piece(Square::D1, Piece::Bishop, Color::Black)
             .piece(Square::A2, Piece::Pawn, Color::White)
             .piece(Square::B2, Piece::Pawn, Color::White)
@@ -341,7 +341,8 @@ mod tests {
             .piece(Square::F8, Piece::King, Color::Black)
             .half_move_clock(1)
             .full_move_number(31)
-            .build();
+            .try_into()
+            .unwrap();
 
         let created_board =
             BoardBuilder::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
