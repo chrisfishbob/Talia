@@ -1,9 +1,9 @@
 use crate::board::Board;
+use crate::move_generation::Move;
+use crate::errors::BoardError;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
-use crate::errors::BoardError;
 use std::collections::HashSet;
-
 
 pub struct BoardBuilder {
     board: Board,
@@ -14,6 +14,19 @@ impl BoardBuilder {
         Self {
             board: Board::default(),
         }
+    }
+
+    pub fn from_starting_position() -> Self {
+        Self { board: Board::starting_position() }
+    }
+
+    pub fn build_from(board: Board) -> Self {
+        Self { board }
+    }
+
+    pub fn make_move(mut self, mv: Move) -> Self {
+        self.board.move_piece(mv);
+        self
     }
 
     pub fn piece(mut self, square: Square, piece: Piece, color: Color) -> Self {

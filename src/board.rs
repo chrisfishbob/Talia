@@ -284,13 +284,15 @@ mod tests {
 
     #[test]
     fn test_from_fen_sicilian_defense() {
-        let mut starting_board = Board::starting_position();
-        // TODO: Remove this manual value set when move increment in implemented
-        starting_board.half_move_clock = 1;
-        starting_board.full_move_number = 2;
-        starting_board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
-        starting_board.move_piece(Move::from_square(Square::C7, Square::C5, Flag::PawnDoublePush));
-        starting_board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
+        let starting_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::C7, Square::C5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            // TODO: Remove this manual value set when move increment in implemented
+            .half_move_clock(1)
+            .full_move_number(2)
+            .try_into()
+            .unwrap();
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board = BoardBuilder::try_from_fen(
