@@ -57,7 +57,7 @@ impl BoardBuilder {
         self
     }
 
-    pub fn from_fen(fen: &str) -> Result<Board, BoardError> {
+    pub fn try_from_fen(fen: &str) -> Result<Board, BoardError> {
         // 0: board arrangement
         // 1: active color
         // 2: Castling availability
@@ -177,14 +177,14 @@ mod tests {
 
     #[test]
     fn test_from_fen_invalid_piece_position_char() {
-        let board = BoardBuilder::from_fen("9/8/8/8/8/8/8/8 w - - 0 1");
+        let board = BoardBuilder::try_from_fen("9/8/8/8/8/8/8/8 w - - 0 1");
 
         assert_eq!(board.err().unwrap().to_string(), "invalid piece symbol in FEN")
     }
 
     #[test]
     fn test_from_fen_invalid_to_move_color() {
-        let board = BoardBuilder::from_fen("8/8/8/8/8/8/8/8 - - - 0 1");
+        let board = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 - - - 0 1");
 
         assert_eq!(
             board.err().unwrap().to_string(),
@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn test_from_fen_invalid_half_move_clock() {
-        let board = BoardBuilder::from_fen("8/8/8/8/8/8/8/8 w - - -1 1");
+        let board = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - -1 1");
 
         assert_eq!(
             board.err().unwrap().to_string(),
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn test_from_fen_invalid_full_move_number() {
-        let board = BoardBuilder::from_fen("8/8/8/8/8/8/8/8 w - - 1 -1");
+        let board = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - 1 -1");
 
         assert_eq!(
             board.err().unwrap().to_string(),
@@ -214,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_from_fen_invalid_castling_rights() {
-        let board = BoardBuilder::from_fen("8/8/8/8/8/8/8/8 w bw - 1 1");
+        let board = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w bw - 1 1");
 
         assert_eq!(
             board.err().unwrap().to_string(),

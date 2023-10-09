@@ -448,7 +448,7 @@ mod tests {
 
     #[test]
     fn test_generate_sliding_moves_from_corner() {
-        let board = BoardBuilder::from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1").unwrap();
+        let board = BoardBuilder::try_from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1").unwrap();
         let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_sliding_moves(Square::A8.as_index());
@@ -515,7 +515,7 @@ mod tests {
 
     #[test]
     fn test_generate_knight_moves_with_pieces_on_target_square() {
-        let board = BoardBuilder::from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
+        let board = BoardBuilder::try_from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
         let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_knight_moves(Square::E5.as_index());

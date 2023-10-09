@@ -112,7 +112,7 @@ impl fmt::Debug for Board {
 
 impl Board {
     pub fn starting_position() -> Self {
-        BoardBuilder::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        BoardBuilder::try_from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
             .expect("failed to construct default board config")
     }
     pub fn to_fen(&self) -> String {
@@ -298,7 +298,7 @@ mod tests {
     #[test]
     fn test_from_fen_empty_board() {
         let empty_board = Board::default();
-        let empty_board_from_fen = BoardBuilder::from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
+        let empty_board_from_fen = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
 
         assert_eq!(empty_board, empty_board_from_fen);
     }
@@ -314,7 +314,7 @@ mod tests {
         starting_board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
 
         // Position after 1. e4, c5 => 2. Nf3
-        let created_board = BoardBuilder::from_fen(
+        let created_board = BoardBuilder::try_from_fen(
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
         )
         .unwrap();
@@ -345,7 +345,7 @@ mod tests {
             .unwrap();
 
         let created_board =
-            BoardBuilder::from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
+            BoardBuilder::try_from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
 
         assert_eq!(board, created_board);
     }
