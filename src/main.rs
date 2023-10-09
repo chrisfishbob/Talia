@@ -2,6 +2,7 @@ pub mod board;
 pub mod move_generation;
 pub mod piece;
 pub mod square;
+pub mod board_builder;
 use crate::board::Board;
 use crate::move_generation::{Move, MoveGenerator, Flag};
 use crate::square::Square;

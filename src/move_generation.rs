@@ -286,6 +286,7 @@ mod tests {
     use crate::move_generation::{Flag, Move, MoveGenerator};
     use crate::piece::{Color, Piece};
     use crate::square::Square;
+    use crate::board_builder::BoardBuilder;
 
     #[test]
     fn test_num_squares_to_edge() {
@@ -447,7 +448,7 @@ mod tests {
 
     #[test]
     fn test_generate_sliding_moves_from_corner() {
-        let board = Board::from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1").unwrap();
+        let board = BoardBuilder::from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1").unwrap();
         let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_sliding_moves(Square::A8.as_index());
@@ -474,11 +475,13 @@ mod tests {
 
     #[test]
     fn test_generate_knight_moves_from_corner() {
-        let mut board = Board::default();
-        board.put_piece(Square::A1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::B1.as_index(), Piece::Rook, Color::White);
-        board.put_piece(Square::H1.as_index(), Piece::Knight, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::B1, Piece::Rook, Color::White)
+            .piece(Square::H1, Piece::Knight, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_knight_moves(Square::H1.as_index());
@@ -490,11 +493,13 @@ mod tests {
 
     #[test]
     fn test_generate_knight_moves_from_near_corner() {
-        let mut board = Board::default();
-        board.put_piece(Square::A1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::B1.as_index(), Piece::Rook, Color::White);
-        board.put_piece(Square::G2.as_index(), Piece::Knight, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::B1, Piece::Rook, Color::White)
+            .piece(Square::G2, Piece::Knight, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_knight_moves(Square::G2.as_index());
@@ -508,7 +513,7 @@ mod tests {
 
     #[test]
     fn test_generate_knight_moves_with_pieces_on_target_square() {
-        let board = Board::from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
+        let board = BoardBuilder::from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
         let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_knight_moves(Square::E5.as_index());
@@ -589,15 +594,16 @@ mod tests {
 
     #[test]
     fn test_pawn_move_with_piece_blocking_white() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        // Tests that opposite color pieces block movement
-        board.put_piece(Square::F4.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::F5.as_index(), Piece::Knight, Color::Black);
-        // Tests that same color pieces also block movement
-        board.put_piece(Square::C4.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::C5.as_index(), Piece::Knight, Color::White);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            // Tests that opposite color pieces block movement
+            .piece(Square::F4, Piece::Pawn, Color::White)
+            .piece(Square::F5, Piece::Knight, Color::Black)
+            // Tests that same color pieces also block movement
+            .piece(Square::C4, Piece::Pawn, Color::White)
+            .piece(Square::C5, Piece::Knight, Color::White)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::F4.as_index());
@@ -609,17 +615,17 @@ mod tests {
 
     #[test]
     fn test_pawn_move_with_piece_blocking_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        // Tests that opposite color pieces block movement
-        board.put_piece(Square::F5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::F4.as_index(), Piece::Knight, Color::White);
-        // Tests that same color pieces also block movement
-        board.put_piece(Square::C5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::C4.as_index(), Piece::Knight, Color::Black);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            // Tests that opposite color pieces block movement
+            .piece(Square::F5, Piece::Pawn, Color::Black)
+            .piece(Square::F4, Piece::Knight, Color::White)
+            // Tests that same color pieces also block movement
+            .piece(Square::C5, Piece::Pawn, Color::Black)
+            .piece(Square::C4, Piece::Knight, Color::Black)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::F5.as_index());
@@ -630,11 +636,12 @@ mod tests {
 
     #[test]
     fn test_pawn_with_second_rank_blocked_white() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E2.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::White)
+            .piece(Square::E4, Piece::Pawn, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E2.as_index());
@@ -645,13 +652,13 @@ mod tests {
 
     #[test]
     fn test_pawn_with_second_rank_blocked_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::White);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E7, Piece::Pawn, Color::Black)
+            .piece(Square::E5, Piece::Pawn, Color::White)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E7.as_index());
@@ -662,14 +669,14 @@ mod tests {
 
     #[test]
     fn test_pawn_both_captures_in_center_white() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::D5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::F5.as_index(), Piece::Pawn, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::D5, Piece::Pawn, Color::Black)
+            .piece(Square::E4, Piece::Pawn, Color::White)
+            .piece(Square::E5, Piece::Pawn, Color::White)
+            .piece(Square::F5, Piece::Pawn, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E4.as_index());
@@ -681,16 +688,16 @@ mod tests {
 
     #[test]
     fn test_pawn_both_captures_in_center_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::D4.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::E5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::E4.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::F4.as_index(), Piece::Pawn, Color::White);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::D4, Piece::Pawn, Color::White)
+            .piece(Square::E5, Piece::Pawn, Color::Black)
+            .piece(Square::E4, Piece::Pawn, Color::Black)
+            .piece(Square::F4, Piece::Pawn, Color::White)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E5.as_index());
@@ -705,14 +712,15 @@ mod tests {
         // If pacman behavior exists, a capture offset of 9 for a pawn at the
         // 7th file will result in a square in the 0th file to become the target
         // square.
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::H4.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::G5.as_index(), Piece::Pawn, Color::Black);
-        // If the pacman behavior exists, the A6 pawn would be a target square
-        board.put_piece(Square::A6.as_index(), Piece::Pawn, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::H4, Piece::Pawn, Color::White)
+            .piece(Square::G5, Piece::Pawn, Color::Black)
+            // If the pacman behavior exists, the A6 pawn would be a target square
+            .piece(Square::A6, Piece::Pawn, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::H4.as_index());
@@ -724,16 +732,15 @@ mod tests {
 
     #[test]
     fn test_pawn_no_pacman_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::A5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::B4.as_index(), Piece::Pawn, Color::White);
-        // If anti-pacman behavior exists, the H3 pawn would be a target square
-        board.put_piece(Square::H3.as_index(), Piece::Pawn, Color::White);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::A5, Piece::Pawn, Color::Black)
+            .piece(Square::B4, Piece::Pawn, Color::White)
+            // If anti-pacman behavior exists, the H3 pawn would be a target square
+            .piece(Square::H3, Piece::Pawn, Color::White)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::A5.as_index());
@@ -748,13 +755,13 @@ mod tests {
         // If anti-pacman behavior exists, a capture offset for a pawn at the 0th
         // file will result in the square on the 8th file on the same rank to become
         // the target square.
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::A3.as_index(), Piece::Pawn, Color::White);
-        // If the pacman behavior exists, the A6 pawn would be a target square
-        board.put_piece(Square::H3.as_index(), Piece::Pawn, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::A3, Piece::Pawn, Color::White)
+            // If the pacman behavior exists, the H3 pawn would be a target square
+            .piece(Square::H3, Piece::Pawn, Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::A3.as_index());
@@ -765,15 +772,14 @@ mod tests {
 
     #[test]
     fn test_pawn_no_anti_pacman_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-
-        board.put_piece(Square::H5.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::A5.as_index(), Piece::Pawn, Color::White);
-
-        board.to_move = Color::Black;
-
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::H5, Piece::Pawn, Color::Black)
+            .piece(Square::A5, Piece::Pawn, Color::White)
+            .to_move(Color::Black)
+            .build();
+        
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::H5.as_index());
 
@@ -810,10 +816,11 @@ mod tests {
 
     #[test]
     fn test_promotion_pawn_move_white() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::White);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E7, Piece::Pawn, Color::White)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E7.as_index());
@@ -843,12 +850,12 @@ mod tests {
 
     #[test]
     fn test_promotion_pawn_move_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E2.as_index(), Piece::Pawn, Color::Black);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::Black)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E2.as_index());
@@ -878,12 +885,14 @@ mod tests {
 
     #[test]
     fn test_promotion_pawn_capture_with_promotion_white() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E7.as_index(), Piece::Pawn, Color::White);
-        board.put_piece(Square::E8.as_index(), Piece::Knight, Color::Black);
-        board.put_piece(Square::D8.as_index(), Piece::Queen, Color::Black);
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E7, Piece::Pawn, Color::White)
+            .piece(Square::E8, Piece::Knight, Color::Black)
+            .piece(Square::D8, Piece::Queen, Color::Black)
+            .build();
+
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E7.as_index());
@@ -913,14 +922,14 @@ mod tests {
 
     #[test]
     fn test_promotion_pawn_capture_with_promotion_black() {
-        let mut board = Board::default();
-        board.put_piece(Square::H1.as_index(), Piece::King, Color::White);
-        board.put_piece(Square::H8.as_index(), Piece::King, Color::Black);
-        board.put_piece(Square::E2.as_index(), Piece::Pawn, Color::Black);
-        board.put_piece(Square::E1.as_index(), Piece::Knight, Color::White);
-        board.put_piece(Square::D1.as_index(), Piece::Queen, Color::White);
-
-        board.to_move = Color::Black;
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::Black)
+            .piece(Square::E1, Piece::Knight, Color::White)
+            .piece(Square::D1, Piece::Queen, Color::White)
+            .to_move(Color::Black)
+            .build();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E2.as_index());
