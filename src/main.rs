@@ -1,10 +1,11 @@
 pub mod board;
+pub mod board_builder;
+pub mod errors;
 pub mod move_generation;
 pub mod piece;
 pub mod square;
-pub mod board_builder;
 use crate::board::Board;
-use crate::move_generation::{Move, MoveGenerator, Flag};
+use crate::move_generation::{Flag, Move, MoveGenerator};
 use crate::square::Square;
 
 fn main() {

@@ -1,4 +1,4 @@
-use crate::board::BoardError;
+use crate::errors::BoardError;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Sq(u8);

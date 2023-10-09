@@ -1,7 +1,9 @@
-use crate::board::{Board, BoardError};
+use crate::board::Board;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
+use crate::errors::BoardError;
 use std::collections::HashSet;
+
 
 pub struct BoardBuilder {
     board: Board,

@@ -1,28 +1,7 @@
 use crate::board_builder::BoardBuilder;
 use crate::move_generation::{Flag, Move};
 use crate::piece::{Color, Piece};
-use std::{error, fmt};
-
-#[derive(Debug, Clone)]
-pub struct BoardError {
-    message: String,
-}
-
-impl BoardError {
-    pub fn new(message: &str) -> BoardError {
-        BoardError {
-            message: message.to_string(),
-        }
-    }
-}
-
-impl fmt::Display for BoardError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.message)
-    }
-}
-
-impl error::Error for BoardError {}
+use std::fmt;
 
 #[derive(PartialEq, Eq)]
 pub struct Board {
