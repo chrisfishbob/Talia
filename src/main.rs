@@ -24,9 +24,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut generator = MoveGenerator::new(board);
     generator.generate_moves();
 
-    for mv in generator.moves {
+    generator.moves.iter().for_each(|mv| {
         println!("{:?}", mv);
-    }
+    });
 
     Ok(())
 }
