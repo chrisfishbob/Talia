@@ -224,6 +224,7 @@ mod tests {
     use crate::{
         board::Board,
         board_builder::BoardBuilder,
+        errors::BoardError,
         move_generation::{Flag, Move},
         piece::{Color, Piece},
         square::Square,
@@ -275,15 +276,17 @@ mod tests {
     }
 
     #[test]
-    fn test_from_fen_empty_board() {
+    fn test_from_fen_empty_board() -> Result<(), BoardError> {
         let empty_board = Board::default();
-        let empty_board_from_fen = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - 0 1").unwrap();
+        let empty_board_from_fen = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - 0 1")?;
 
         assert_eq!(empty_board, empty_board_from_fen);
+
+        Ok(())
     }
 
     #[test]
-    fn test_from_fen_sicilian_defense() {
+    fn test_from_fen_sicilian_defense() -> Result<(), BoardError> {
         let starting_board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(Square::C7, Square::C5, Flag::PawnDoublePush))
@@ -291,20 +294,19 @@ mod tests {
             // TODO: Remove this manual value set when move increment in implemented
             .half_move_clock(1)
             .full_move_number(2)
-            .try_into()
-            .unwrap();
+            .try_into()?;
 
         // Position after 1. e4, c5 => 2. Nf3
         let created_board = BoardBuilder::try_from_fen(
             "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
-        )
-        .unwrap();
+        )?;
 
-        assert_eq!(starting_board, created_board)
+        assert_eq!(starting_board, created_board);
+        Ok(())
     }
 
     #[test]
-    fn test_from_puzzle_fen() {
+    fn test_from_puzzle_fen() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::new()
             .piece(Square::D1, Piece::Bishop, Color::Black)
             .piece(Square::A2, Piece::Pawn, Color::White)
@@ -322,13 +324,13 @@ mod tests {
             .piece(Square::F8, Piece::King, Color::Black)
             .half_move_clock(1)
             .full_move_number(31)
-            .try_into()
-            .unwrap();
+            .try_into()?;
 
         let created_board =
-            BoardBuilder::try_from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31").unwrap();
+            BoardBuilder::try_from_fen("5k2/1pR1p2p/p5p1/8/3Pp3/8/PP3K1P/3b4 w - - 1 31")?;
 
         assert_eq!(board, created_board);
+        Ok(())
     }
 
     #[test]
@@ -347,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_fen_italian_game() {
+    fn test_to_fen_italian_game() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
@@ -357,17 +359,17 @@ mod tests {
             // TODO: Remove this manual value set when move increment in implemented
             .half_move_clock(3)
             .full_move_number(3)
-            .try_into()
-            .unwrap();
+            .try_into()?;
 
         assert_eq!(
             board.to_fen(),
             "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R b KQkq - 3 3"
-        )
+        );
+        Ok(())
     }
 
     #[test]
-    fn test_to_fen_advanced_caro_kann() {
+    fn test_to_fen_advanced_caro_kann() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(Square::C7, Square::C6, Flag::None))
@@ -383,17 +385,17 @@ mod tests {
             // TODO: Remove this manual value set when move increment in implemented
             .half_move_clock(1)
             .full_move_number(6)
-            .try_into()
-            .unwrap();
+            .try_into()?;
 
         assert_eq!(
             board.to_fen(),
             "rn1qkbnr/pp3ppp/4p3/2ppPb2/3P4/4BN2/PPP1BPPP/RN1QK2R b KQkq - 1 6"
-        )
+        );
+        Ok(())
     }
 
     #[test]
-    fn test_to_fen_marshall_attack() {
+    fn test_to_fen_marshall_attack() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
@@ -425,13 +427,13 @@ mod tests {
             .can_king_side_castle(Color::Black, false)
             .can_queen_side_castle(Color::White, false)
             .can_queen_side_castle(Color::Black, false)
-            .try_into()
-            .unwrap();
+            .try_into()?;
 
         assert_eq!(
             board.to_fen(),
             "r1bq1rk1/2p1bppp/p1n2n2/1p1pp3/4P3/1BP2N2/PP1P1PPP/RNBQR1K1 w - d6 0 9"
-        )
+        );
+        Ok(())
     }
 
     #[test]

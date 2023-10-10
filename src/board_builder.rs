@@ -1,6 +1,6 @@
 use crate::board::Board;
-use crate::move_generation::Move;
 use crate::errors::BoardError;
+use crate::move_generation::Move;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 use std::collections::HashSet;
@@ -17,7 +17,9 @@ impl BoardBuilder {
     }
 
     pub fn from_starting_position() -> Self {
-        Self { board: Board::starting_position() }
+        Self {
+            board: Board::starting_position(),
+        }
     }
 
     pub fn build_from(board: Board) -> Self {
