@@ -282,11 +282,10 @@ impl MoveGenerator {
 
 #[cfg(test)]
 mod tests {
-    use crate::board::Board;
+    use crate::board_builder::BoardBuilder;
     use crate::move_generation::{Flag, Move, MoveGenerator};
     use crate::piece::{Color, Piece};
     use crate::square::Square;
-    use crate::board_builder::BoardBuilder;
 
     #[test]
     fn test_num_squares_to_edge() {
@@ -383,18 +382,14 @@ mod tests {
 
     #[test]
     fn test_generate_sliding_moves_from_e4_e5_nf3() {
-        let mut move_generator = MoveGenerator::default();
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::E7, Square::E5, Flag::None));
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
-        // TODO: Remove this when move_piece handles this
-        move_generator.board.to_move = Color::Black;
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::None))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .try_into()
+            .unwrap();
+
+        let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_sliding_moves(Square::A8.as_index());
         move_generator.generate_sliding_moves(Square::C8.as_index());
@@ -416,19 +411,15 @@ mod tests {
 
     #[test]
     fn test_generate_sliding_moves_from_e4_e5_nf3_nc6() {
-        let mut move_generator = MoveGenerator::default();
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::E7, Square::E5, Flag::None));
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
-        move_generator
-            .board
-            .move_piece(Move::from_square(Square::B8, Square::C6, Flag::None));
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::None))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
+            .try_into()
+            .unwrap();
+
+        let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_sliding_moves(Square::A1.as_index());
         move_generator.generate_sliding_moves(Square::C1.as_index());
@@ -515,7 +506,8 @@ mod tests {
 
     #[test]
     fn test_generate_knight_moves_with_pieces_on_target_square() {
-        let board = BoardBuilder::try_from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
+        let board =
+            BoardBuilder::try_from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1").unwrap();
         let mut move_generator = MoveGenerator::new(board);
 
         move_generator.generate_knight_moves(Square::E5.as_index());
@@ -561,8 +553,11 @@ mod tests {
 
     #[test]
     fn test_generate_pawn_moves_from_starting_position_black() {
-        let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::None))
+            .try_into()
+            .unwrap();
+
         let mut move_generator = MoveGenerator::new(board);
 
         for square in 0..64 {
@@ -791,7 +786,7 @@ mod tests {
             .to_move(Color::Black)
             .try_into()
             .unwrap();
-        
+
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::H5.as_index());
 
@@ -801,9 +796,11 @@ mod tests {
 
     #[test]
     fn test_already_moved_pawn_white() {
-        let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::None));
-        board.move_piece(Move::from_square(Square::G8, Square::F6, Flag::None));
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::None))
+            .make_move(Move::from_square(Square::G8, Square::F6, Flag::None))
+            .try_into()
+            .unwrap();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E4.as_index());
@@ -814,10 +811,12 @@ mod tests {
 
     #[test]
     fn test_already_moved_pawn_black() {
-        let mut board = Board::starting_position();
-        board.move_piece(Move::from_square(Square::H2, Square::H4, Flag::None));
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::None));
-        board.move_piece(Move::from_square(Square::H4, Square::H5, Flag::None));
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::H2, Square::H4, Flag::None))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::H4, Square::H5, Flag::None))
+            .try_into()
+            .unwrap();
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E5.as_index());
@@ -907,7 +906,6 @@ mod tests {
             .piece(Square::D8, Piece::Queen, Color::Black)
             .try_into()
             .unwrap();
-
 
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::E7.as_index());

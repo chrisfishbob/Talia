@@ -41,18 +41,18 @@ impl BoardBuilder {
 
     pub fn can_king_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.can_black_king_side_castle = castle;
-        } else {
             self.board.can_white_king_side_castle = castle;
+        } else {
+            self.board.can_black_king_side_castle = castle;
         }
         self
     }
 
     pub fn can_queen_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.can_black_queen_side_castle = castle;
-        } else {
             self.board.can_white_queen_side_castle = castle;
+        } else {
+            self.board.can_black_queen_side_castle = castle;
         }
         self
     }

@@ -348,16 +348,17 @@ mod tests {
 
     #[test]
     fn test_to_fen_italian_game() {
-        let mut board = Board::starting_position();
-
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
-        board.move_piece(Move::from_square(Square::B8, Square::C6, Flag::None));
-        board.move_piece(Move::from_square(Square::F1, Square::C4, Flag::None));
-        // TODO: Remove this manual value set when move increment in implemented
-        board.half_move_clock = 3;
-        board.full_move_number = 3;
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
+            .make_move(Move::from_square(Square::F1, Square::C4, Flag::None))
+            // TODO: Remove this manual value set when move increment in implemented
+            .half_move_clock(3)
+            .full_move_number(3)
+            .try_into()
+            .unwrap();
 
         assert_eq!(
             board.to_fen(),
@@ -367,22 +368,23 @@ mod tests {
 
     #[test]
     fn test_to_fen_advanced_caro_kann() {
-        let mut board = Board::starting_position();
-
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::C7, Square::C6, Flag::None));
-        board.move_piece(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::E4, Square::E5, Flag::None));
-        board.move_piece(Move::from_square(Square::C8, Square::F5, Flag::None));
-        board.move_piece(Move::from_square(Square::F1, Square::E2, Flag::None));
-        board.move_piece(Move::from_square(Square::E7, Square::E6, Flag::None));
-        board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
-        board.move_piece(Move::from_square(Square::C6, Square::C5, Flag::None));
-        board.move_piece(Move::from_square(Square::C1, Square::E3, Flag::None));
-        // TODO: Remove this manual value set when move increment in implemented
-        board.half_move_clock = 1;
-        board.full_move_number = 6;
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::C7, Square::C6, Flag::None))
+            .make_move(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::C8, Square::F5, Flag::None))
+            .make_move(Move::from_square(Square::F1, Square::E2, Flag::None))
+            .make_move(Move::from_square(Square::E7, Square::E6, Flag::None))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .make_move(Move::from_square(Square::C6, Square::C5, Flag::None))
+            .make_move(Move::from_square(Square::C1, Square::E3, Flag::None))
+            // TODO: Remove this manual value set when move increment in implemented
+            .half_move_clock(1)
+            .full_move_number(6)
+            .try_into()
+            .unwrap();
 
         assert_eq!(
             board.to_fen(),
@@ -392,40 +394,39 @@ mod tests {
 
     #[test]
     fn test_to_fen_marshall_attack() {
-        let mut board = Board::starting_position();
-
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
-        board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
-        board.move_piece(Move::from_square(Square::B8, Square::C6, Flag::None));
-        board.move_piece(Move::from_square(Square::F1, Square::B5, Flag::None));
-        board.move_piece(Move::from_square(Square::A7, Square::A6, Flag::None));
-        board.move_piece(Move::from_square(Square::B5, Square::A4, Flag::None));
-        board.move_piece(Move::from_square(Square::G8, Square::F6, Flag::None));
-        // TODO: Handle castling
-        board.move_piece(Move::from_square(Square::E1, Square::G1, Flag::None));
-        board.move_piece(Move::from_square(Square::H1, Square::F1, Flag::None));
-        // end
-        board.move_piece(Move::from_square(Square::F8, Square::E7, Flag::None));
-        board.move_piece(Move::from_square(Square::F1, Square::E1, Flag::None));
-        board.move_piece(Move::from_square(Square::B7, Square::B5, Flag::None));
-        board.move_piece(Move::from_square(Square::A4, Square::B3, Flag::None));
-        // TODO: Handle castling
-        board.move_piece(Move::from_square(Square::E8, Square::G8, Flag::None));
-        board.move_piece(Move::from_square(Square::H8, Square::F8, Flag::None));
-        // end
-        board.move_piece(Move::from_square(Square::C2, Square::C3, Flag::None));
-        board.move_piece(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush));
-
-        // TODO: Remove this manual value set when move increment in implemented
-        board.half_move_clock = 0;
-        board.full_move_number = 9;
-
-        // TODO: Remove this when castling is properly handled
-        board.can_white_king_side_castle = false;
-        board.can_white_queen_side_castle = false;
-        board.can_black_king_side_castle = false;
-        board.can_black_queen_side_castle = false;
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
+            .make_move(Move::from_square(Square::F1, Square::B5, Flag::None))
+            .make_move(Move::from_square(Square::A7, Square::A6, Flag::None))
+            .make_move(Move::from_square(Square::B5, Square::A4, Flag::None))
+            .make_move(Move::from_square(Square::G8, Square::F6, Flag::None))
+            // TODO: Handle castling
+            .make_move(Move::from_square(Square::E1, Square::G1, Flag::None))
+            .make_move(Move::from_square(Square::H1, Square::F1, Flag::None))
+            // end
+            .make_move(Move::from_square(Square::F8, Square::E7, Flag::None))
+            .make_move(Move::from_square(Square::F1, Square::E1, Flag::None))
+            .make_move(Move::from_square(Square::B7, Square::B5, Flag::None))
+            .make_move(Move::from_square(Square::A4, Square::B3, Flag::None))
+            // TODO: Handle castling
+            .make_move(Move::from_square(Square::E8, Square::G8, Flag::None))
+            .make_move(Move::from_square(Square::H8, Square::F8, Flag::None))
+            // end
+            .make_move(Move::from_square(Square::C2, Square::C3, Flag::None))
+            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
+            // TODO: Remove this manual value set when move increment in implemented
+            .half_move_clock(0)
+            .full_move_number(9)
+            // TODO: Remove this when castling is properly handled
+            .can_king_side_castle(Color::White, false)
+            .can_king_side_castle(Color::Black, false)
+            .can_queen_side_castle(Color::White, false)
+            .can_queen_side_castle(Color::Black, false)
+            .try_into()
+            .unwrap();
 
         assert_eq!(
             board.to_fen(),
