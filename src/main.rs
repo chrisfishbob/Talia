@@ -10,7 +10,6 @@ use crate::board_builder::BoardBuilder;
 use crate::move_generation::{Flag, Move, MoveGenerator};
 use crate::square::Square;
 
-// TODO: Update README with progress
 fn main() -> Result<(), Box<dyn Error>> {
     let board = BoardBuilder::from_starting_position()
         .make_move(Move::from_square(Square::E2, Square::E4, Flag::None))
