@@ -1081,4 +1081,82 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    fn test_white_en_passant_capture_right_on_a_file() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::A2, Square::A4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
+            .make_move(Move::from_square(Square::A4, Square::A5, Flag::None))
+            .make_move(Move::from_square(Square::B7, Square::B5, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::A5.as_index());
+
+        assert!(move_generator.moves.len() == 2);
+        assert!(move_generator.generated_move(Square::A5, Square::A6, Flag::None));
+        assert!(move_generator.generated_move(Square::A5, Square::B6, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_white_en_passant_capture_left_on_h_file() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::H2, Square::H4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
+            .make_move(Move::from_square(Square::H4, Square::H5, Flag::None))
+            .make_move(Move::from_square(Square::G7, Square::G5, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::H5.as_index());
+
+        assert!(move_generator.moves.len() == 2);
+        assert!(move_generator.generated_move(Square::H5, Square::H6, Flag::None));
+        assert!(move_generator.generated_move(Square::H5, Square::G6, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_black_en_passant_capture_left_on_a_file() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::A7, Square::A5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::A5, Square::A4, Flag::None))
+            .make_move(Move::from_square(Square::B2, Square::B4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::A4.as_index());
+
+        assert!(move_generator.moves.len() == 2);
+        assert!(move_generator.generated_move(Square::A4, Square::A3, Flag::None));
+        assert!(move_generator.generated_move(Square::A4, Square::B3, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_black_en_passant_capture_right_on_h_file() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::H7, Square::H5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::H5, Square::H4, Flag::None))
+            .make_move(Move::from_square(Square::G2, Square::G4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::H4.as_index());
+
+        assert!(move_generator.moves.len() == 2);
+        assert!(move_generator.generated_move(Square::H4, Square::H3, Flag::None));
+        assert!(move_generator.generated_move(Square::H4, Square::G3, Flag::None));
+
+        Ok(())
+    }
 }
