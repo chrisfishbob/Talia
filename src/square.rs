@@ -3,8 +3,7 @@ use crate::errors::BoardError;
 #[derive(Copy, Clone, Debug)]
 pub struct Sq(u8);
 
-
-// Enum for developer ergonomics, should never exist in runtime (other than for FEN processing). 
+// Enum for developer ergonomics, should never exist in runtime (other than for FEN processing).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Square {
     A1,
@@ -77,7 +76,6 @@ impl Square {
     pub fn as_index(self) -> usize {
         self as usize
     }
-
 
     pub fn from_algebraic_notation(s: &str) -> Result<Self, BoardError> {
         match s {
