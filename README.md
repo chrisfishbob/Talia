@@ -16,4 +16,5 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 ✅ Pawn double move generation  
 ✅ Pawn promotions move generation  
 ✅ Pawn captures moves generation  
-✅ Pawn en passatn captures moves generation  
+✅ Pawn en passant captures moves generation  
+✅ King single moves generation   
