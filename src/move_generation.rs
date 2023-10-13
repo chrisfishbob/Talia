@@ -250,7 +250,10 @@ impl MoveGenerator {
                 tmp as usize
             };
 
-            if self.board.colors[target_square].is_none() {
+            if self.board.colors[target_square].is_none()
+                || self.board.colors[target_square]
+                    .is_some_and(|color| color != self.board.colors[start_square].unwrap())
+            {
                 self.moves
                     .push(Move::new(start_square, target_square, Flag::None));
             }
@@ -1175,7 +1178,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement() -> Result<(), BoardError> {
+    fn test_basic_king_movement_white() -> Result<(), BoardError> {
         let board = BoardBuilder::new()
             .piece(Square::E4, Piece::King, Color::White)
             .piece(Square::E8, Piece::King, Color::Black)
@@ -1200,7 +1203,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_with_blocking_same_color_pieces() -> Result<(), BoardError> {
+    fn test_basic_king_movement_with_blocking_same_color_pieces_white() -> Result<(), BoardError> {
         let board = BoardBuilder::new()
             .piece(Square::E4, Piece::King, Color::White)
             .piece(Square::E8, Piece::King, Color::Black)
@@ -1218,6 +1221,111 @@ mod tests {
         assert!(move_generator.generated_move(Square::E4, Square::D4, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::F5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_basic_king_movement_with_captures_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::E4, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .piece(Square::A2, Piece::Pawn, Color::White)
+            .piece(Square::A7, Piece::Pawn, Color::Black)
+            .piece(Square::E5, Piece::Knight, Color::Black)
+            .piece(Square::F3, Piece::Knight, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::E4.as_index());
+
+        assert!(move_generator.moves.len() == 8);
+        assert!(move_generator.generated_move(Square::E4, Square::E5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+
+        Ok(())
+    }
+
+    // TODO: Finish writing this test and the ones below
+    #[test]
+    fn test_basic_king_movement_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::E4, Piece::King, Color::Black)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::A2, Piece::Pawn, Color::White)
+            .piece(Square::A7, Piece::Pawn, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::E4.as_index());
+
+        assert!(move_generator.moves.len() == 8);
+        assert!(move_generator.generated_move(Square::E4, Square::E5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_basic_king_movement_with_blocking_same_color_pieces_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::E4, Piece::King, Color::Black)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::A2, Piece::Pawn, Color::White)
+            .piece(Square::A7, Piece::Pawn, Color::Black)
+            .piece(Square::E5, Piece::Knight, Color::Black)
+            .piece(Square::F3, Piece::Knight, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::E4.as_index());
+
+        assert!(move_generator.moves.len() == 6);
+        assert!(move_generator.generated_move(Square::E4, Square::F4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_basic_king_movement_with_captures_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::E4, Piece::King, Color::Black)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::A2, Piece::Pawn, Color::White)
+            .piece(Square::A7, Piece::Pawn, Color::Black)
+            .piece(Square::E5, Piece::Knight, Color::White)
+            .piece(Square::F3, Piece::Knight, Color::White)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::E4.as_index());
+
+        assert!(move_generator.moves.len() == 8);
+        assert!(move_generator.generated_move(Square::E4, Square::E5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D4, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F5, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
 
