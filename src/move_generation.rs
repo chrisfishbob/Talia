@@ -1254,7 +1254,6 @@ mod tests {
         Ok(())
     }
 
-    // TODO: Finish writing this test and the ones below
     #[test]
     fn test_basic_king_movement_black() -> Result<(), BoardError> {
         let board = BoardBuilder::new()
