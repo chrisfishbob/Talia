@@ -311,9 +311,6 @@ impl MoveGenerator {
         let starting_file = start as isize % 8;
         let target_rank = target as isize / 8;
         let target_file = target as isize % 8;
-        dbg!(starting_rank, starting_file, target_rank, target_file);
-        dbg!("diff:", (target_rank - starting_rank).abs());
-        dbg!("diff:", (target_file - starting_file).abs());
 
         // Prevents pieces from teleporting from one side to another Pacman-style
         // Two ranks or columns is the most a non-sliding piece can legally move
@@ -661,7 +658,6 @@ mod tests {
         move_generator.generate_pawn_moves(Square::F4.as_index());
         move_generator.generate_pawn_moves(Square::C4.as_index());
 
-        dbg!(&move_generator.moves);
         assert_eq!(move_generator.moves.len(), 0);
 
         Ok(())
@@ -787,7 +783,6 @@ mod tests {
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_pawn_moves(Square::H4.as_index());
 
-        dbg!(&move_generator.moves);
         assert_eq!(move_generator.moves.len(), 2);
         assert!(move_generator.generated_move(Square::H4, Square::G5, Flag::None));
         assert!(move_generator.generated_move(Square::H4, Square::H5, Flag::None));
@@ -1479,7 +1474,6 @@ mod tests {
         let mut move_generator = MoveGenerator::new(board);
         move_generator.generate_king_moves(Square::H8.as_index());
 
-        dbg!(&move_generator.moves);
         assert!(move_generator.moves.len() == 3);
         assert!(move_generator.generated_move(Square::H8, Square::H7, Flag::None));
         assert!(move_generator.generated_move(Square::H8, Square::G8, Flag::None));
