@@ -137,22 +137,17 @@ impl MoveGenerator {
         let knight_move_offsets = [-17, -15, -10, -6, 6, 10, 15, 17];
 
         for offset in knight_move_offsets {
-            let target_square = start_square as isize + offset;
-            let starting_rank = start_square as isize / 8;
-            let starting_file = start_square as isize % 8;
-            let target_rank = target_square / 8;
-            let target_file = target_square % 8;
+            let target_square = {
+                let tmp = start_square as isize + offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
+                tmp as usize
+            };
 
-            if !(0..64).contains(&target_square) {
+            if Self::is_pacman_move(start_square, target_square) {
                 continue;
             }
-
-            // Prevents the knight from teleporting from one side to another Pacman-style.
-            if (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2 {
-                continue;
-            }
-
-            let target_square = target_square as usize;
 
             match self.board.colors[target_square] {
                 None => self
@@ -247,8 +242,15 @@ impl MoveGenerator {
         for offset in self.direction_offsets {
             let target_square = {
                 let tmp = start_square as isize + offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
                 tmp as usize
             };
+
+            if Self::is_pacman_move(start_square, target_square) {
+                continue;
+            }
 
             if self.board.colors[target_square].is_none()
                 || self.board.colors[target_square]
@@ -296,6 +298,17 @@ impl MoveGenerator {
             .push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
         self.moves
             .push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
+    }
+
+    fn is_pacman_move(start: usize, target: usize) -> bool {
+        let starting_rank = start as isize / 8;
+        let starting_file = start as isize % 8;
+        let target_rank = target as isize / 8;
+        let target_file = target as isize % 8;
+
+        // Prevents pieces from teleporting from one side to another Pacman-style
+        // Two ranks or columns is the most a non-sliding piece can legally move
+        (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2
     }
 
     #[cfg(test)]
@@ -1327,6 +1340,88 @@ mod tests {
         assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::D5, Flag::None));
         assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_king_basic_movement_no_pacman_h_file_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::White)
+            .piece(Square::E7, Piece::Pawn, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::H1.as_index());
+
+        assert!(move_generator.moves.len() == 3);
+        assert!(move_generator.generated_move(Square::H1, Square::H2, Flag::None));
+        assert!(move_generator.generated_move(Square::H1, Square::G1, Flag::None));
+        assert!(move_generator.generated_move(Square::H1, Square::G2, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_king_basic_movement_no_pacman_a_file_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::White)
+            .piece(Square::E7, Piece::Pawn, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::A1.as_index());
+
+        assert!(move_generator.moves.len() == 3);
+        assert!(move_generator.generated_move(Square::A1, Square::A2, Flag::None));
+        assert!(move_generator.generated_move(Square::A1, Square::B1, Flag::None));
+        assert!(move_generator.generated_move(Square::A1, Square::B2, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_king_basic_movement_no_pacman_h_file_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::H1, Piece::King, Color::White)
+            .piece(Square::H8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::White)
+            .piece(Square::E7, Piece::Pawn, Color::Black)
+            .to_move(Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::H8.as_index());
+
+        dbg!(&move_generator.moves);
+        assert!(move_generator.moves.len() == 3);
+        assert!(move_generator.generated_move(Square::H8, Square::H7, Flag::None));
+        assert!(move_generator.generated_move(Square::H8, Square::G8, Flag::None));
+        assert!(move_generator.generated_move(Square::H8, Square::G7, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_king_basic_movement_no_pacman_a_file_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::A1, Piece::King, Color::White)
+            .piece(Square::A8, Piece::King, Color::Black)
+            .piece(Square::E2, Piece::Pawn, Color::White)
+            .piece(Square::E7, Piece::Pawn, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(Square::A8.as_index());
+
+        assert!(move_generator.moves.len() == 3);
+        assert!(move_generator.generated_move(Square::A8, Square::A7, Flag::None));
+        assert!(move_generator.generated_move(Square::A8, Square::B8, Flag::None));
+        assert!(move_generator.generated_move(Square::A8, Square::B7, Flag::None));
 
         Ok(())
     }
