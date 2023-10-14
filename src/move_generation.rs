@@ -1413,6 +1413,7 @@ mod tests {
             .piece(Square::A8, Piece::King, Color::Black)
             .piece(Square::E2, Piece::Pawn, Color::White)
             .piece(Square::E7, Piece::Pawn, Color::Black)
+            .to_move(Color::Black)
             .try_into()?;
 
         let mut move_generator = MoveGenerator::new(board);
