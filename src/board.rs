@@ -551,4 +551,18 @@ mod tests {
 
         Ok(())
     }
+
+    #[test]
+    #[should_panic]
+    fn test_invalid_en_passant_move_panic() {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::D7, Square::D6, Flag::None))
+            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::D6, Square::D5, Flag::None))
+            .try_into()
+            .unwrap();
+
+        board.move_piece(Move::from_square(Square::E5, Square::D6, Flag::EnPassantCapture));
+    }
 }
