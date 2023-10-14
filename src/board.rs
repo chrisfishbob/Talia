@@ -206,7 +206,11 @@ impl Board {
             _ => (),
         }
 
-        self.squares[mv.target_square] = self.squares[mv.starting_square];
+        if let Flag::PromoteTo(piece) = mv.flag {
+            self.squares[mv.target_square] = Some(piece);
+        } else {
+            self.squares[mv.target_square] = self.squares[mv.starting_square];
+        }
         self.colors[mv.target_square] = self.colors[mv.starting_square];
         self.squares[mv.starting_square] = None;
         self.colors[mv.starting_square] = None;
@@ -503,6 +507,47 @@ mod tests {
         assert!(board.is_square_empty(Square::D4.as_index()));
         assert!(board.is_piece_at_square(Square::D3.as_index(), Piece::Pawn, Color::Black));
         assert!(board.en_passant_square.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pawn_promotion_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::new()
+            .piece(Square::H7, Piece::Pawn, Color::White)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .try_into()?;
+
+        board.move_piece(Move::from_square(
+            Square::H7,
+            Square::H8,
+            Flag::PromoteTo(Piece::Queen),
+        ));
+
+        assert!(board.is_square_empty(Square::H7.as_index()));
+        assert!(board.is_piece_at_square(Square::H8.as_index(), Piece::Queen, Color::White));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pawn_promotion_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::new()
+            .piece(Square::H2, Piece::Pawn, Color::Black)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .to_move(Color::Black)
+            .try_into()?;
+
+        board.move_piece(Move::from_square(
+            Square::H2,
+            Square::H1,
+            Flag::PromoteTo(Piece::Queen),
+        ));
+
+        assert!(board.is_square_empty(Square::H2.as_index()));
+        assert!(board.is_piece_at_square(Square::H1.as_index(), Piece::Queen, Color::Black));
 
         Ok(())
     }
