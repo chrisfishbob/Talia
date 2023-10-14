@@ -50,6 +50,7 @@ pub enum Flag {
     None,
     Castle,
     PawnDoublePush,
+    EnPassantCapture,
     PromoteTo(Piece),
 }
 
@@ -183,34 +184,38 @@ impl MoveGenerator {
             }
         }
 
-        // NOTE: Captures can also result in promotion
-        // // Check if either captures are available
         for capture_offset in &pawn_move_offsets[2..] {
-            let capture_index = start_square as isize + capture_offset;
-            let starting_file = start_square as isize % 8;
-            let target_file = capture_index % 8;
+            let target_square = {
+                let tmp = start_square as isize + capture_offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
+                tmp as usize
+            };
 
-            let is_occupied_by_opponent_piece = self.board.colors[capture_index as usize]
-                .is_some_and(|color| color != self.board.to_move);
+            if Self::is_pacman_move(start_square, target_square) {
+                continue;
+            }
+
+            let is_occupied_by_opponent_piece =
+                self.board.colors[target_square].is_some_and(|color| color != self.board.to_move);
             let can_capture_en_passant = self
                 .board
                 .en_passant_square
-                .is_some_and(|index| index == capture_index as usize);
+                .is_some_and(|index| index == target_square);
 
-            if (is_occupied_by_opponent_piece
-                || can_capture_en_passant)
-                // Prevents the pawn from teleporting from one side to another Pacman-style
-                // and the +-7 capture offset being incorrect for A and H pawns 
-                && (target_file - starting_file).abs() == 1
-            {
-                let target_rank = capture_index / 8;
+            if is_occupied_by_opponent_piece || can_capture_en_passant {
+                let target_rank = target_square / 8;
                 let is_promotion_move = target_rank == 0 || target_rank == 7;
 
                 if is_promotion_move {
-                    self.add_promotion_moves(start_square, capture_index as usize);
+                    self.add_promotion_moves(start_square, target_square);
+                } else if can_capture_en_passant {
+                    self.moves
+                        .push(Move::new(start_square, target_square, Flag::EnPassantCapture));
                 } else {
                     self.moves
-                        .push(Move::new(start_square, capture_index as usize, Flag::None));
+                        .push(Move::new(start_square, target_square, Flag::None));
                 }
             }
         }
@@ -301,10 +306,14 @@ impl MoveGenerator {
     }
 
     fn is_pacman_move(start: usize, target: usize) -> bool {
+        println!("start is {start}, target is {target}");
         let starting_rank = start as isize / 8;
         let starting_file = start as isize % 8;
         let target_rank = target as isize / 8;
         let target_file = target as isize % 8;
+        dbg!(starting_rank, starting_file, target_rank, target_file);
+        dbg!("diff:", (target_rank - starting_rank).abs());
+        dbg!("diff:", (target_file - starting_file).abs());
 
         // Prevents pieces from teleporting from one side to another Pacman-style
         // Two ranks or columns is the most a non-sliding piece can legally move
@@ -883,6 +892,79 @@ mod tests {
     }
 
     #[test]
+    fn test_pawn_capture_index_no_overflow() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::H7, Piece::Pawn, Color::White)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::H7.as_index());
+
+        assert!(move_generator.moves.len() == 4);
+        assert!(move_generator.generated_move(
+            Square::H7,
+            Square::H8,
+            Flag::PromoteTo(Piece::Queen)
+        ));
+        assert!(move_generator.generated_move(
+            Square::H7,
+            Square::H8,
+            Flag::PromoteTo(Piece::Rook)
+        ));
+        assert!(move_generator.generated_move(
+            Square::H7,
+            Square::H8,
+            Flag::PromoteTo(Piece::Bishop)
+        ));
+        assert!(move_generator.generated_move(
+            Square::H7,
+            Square::H8,
+            Flag::PromoteTo(Piece::Knight)
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_pawn_capture_index_no_underflow() -> Result<(), BoardError> {
+        let board = BoardBuilder::new()
+            .piece(Square::A2, Piece::Pawn, Color::Black)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .to_move(Color::Black)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_pawn_moves(Square::A2.as_index());
+
+        assert!(move_generator.moves.len() == 4);
+        assert!(move_generator.generated_move(
+            Square::A2,
+            Square::A1,
+            Flag::PromoteTo(Piece::Queen)
+        ));
+        assert!(move_generator.generated_move(
+            Square::A2,
+            Square::A1,
+            Flag::PromoteTo(Piece::Rook)
+        ));
+        assert!(move_generator.generated_move(
+            Square::A2,
+            Square::A1,
+            Flag::PromoteTo(Piece::Bishop)
+        ));
+        assert!(move_generator.generated_move(
+            Square::A2,
+            Square::A1,
+            Flag::PromoteTo(Piece::Knight)
+        ));
+
+        Ok(())
+    }
+
+    #[test]
     fn test_promotion_pawn_move_white() -> Result<(), BoardError> {
         let board = BoardBuilder::new()
             .piece(Square::H1, Piece::King, Color::White)
@@ -1046,7 +1128,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 3);
         assert!(move_generator.generated_move(Square::E5, Square::E6, Flag::None));
-        assert!(move_generator.generated_move(Square::E5, Square::D6, Flag::None));
+        assert!(move_generator.generated_move(Square::E5, Square::D6, Flag::EnPassantCapture));
         assert!(move_generator.generated_move(Square::E5, Square::F6, Flag::None));
 
         Ok(())
@@ -1066,7 +1148,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 2);
         assert!(move_generator.generated_move(Square::E5, Square::E6, Flag::None));
-        assert!(move_generator.generated_move(Square::E5, Square::F6, Flag::None));
+        assert!(move_generator.generated_move(Square::E5, Square::F6, Flag::EnPassantCapture));
 
         Ok(())
     }
@@ -1086,7 +1168,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 3);
         assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
-        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::D3, Flag::EnPassantCapture));
         assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
 
         Ok(())
@@ -1106,7 +1188,7 @@ mod tests {
         move_generator.generate_pawn_moves(Square::E4.as_index());
 
         assert!(move_generator.moves.len() == 2);
-        assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::None));
+        assert!(move_generator.generated_move(Square::E4, Square::F3, Flag::EnPassantCapture));
         assert!(move_generator.generated_move(Square::E4, Square::E3, Flag::None));
 
         Ok(())
@@ -1126,7 +1208,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 2);
         assert!(move_generator.generated_move(Square::A5, Square::A6, Flag::None));
-        assert!(move_generator.generated_move(Square::A5, Square::B6, Flag::None));
+        assert!(move_generator.generated_move(Square::A5, Square::B6, Flag::EnPassantCapture));
 
         Ok(())
     }
@@ -1145,7 +1227,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 2);
         assert!(move_generator.generated_move(Square::H5, Square::H6, Flag::None));
-        assert!(move_generator.generated_move(Square::H5, Square::G6, Flag::None));
+        assert!(move_generator.generated_move(Square::H5, Square::G6, Flag::EnPassantCapture));
 
         Ok(())
     }
@@ -1165,7 +1247,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 2);
         assert!(move_generator.generated_move(Square::A4, Square::A3, Flag::None));
-        assert!(move_generator.generated_move(Square::A4, Square::B3, Flag::None));
+        assert!(move_generator.generated_move(Square::A4, Square::B3, Flag::EnPassantCapture));
 
         Ok(())
     }
@@ -1185,7 +1267,7 @@ mod tests {
 
         assert!(move_generator.moves.len() == 2);
         assert!(move_generator.generated_move(Square::H4, Square::H3, Flag::None));
-        assert!(move_generator.generated_move(Square::H4, Square::G3, Flag::None));
+        assert!(move_generator.generated_move(Square::H4, Square::G3, Flag::EnPassantCapture));
 
         Ok(())
     }
