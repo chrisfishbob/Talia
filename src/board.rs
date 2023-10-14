@@ -180,20 +180,36 @@ impl Board {
     // TODO: Handle move increment
     pub fn move_piece(&mut self, mv: Move) {
         // With every move, the ability to en passant expires until a double pawn push
+        let saved_en_passant_square = self.en_passant_square;
         self.en_passant_square = None;
 
-        let starting_piece = self.squares[mv.starting_square];
-        let starting_piece_color = self.colors[mv.starting_square];
-        self.squares[mv.target_square] = starting_piece;
-        self.colors[mv.target_square] = starting_piece_color;
+        match mv.flag {
+            Flag::PawnDoublePush => {
+                let pawn_one_move_offset = if self.to_move == Color::White { 8 } else { -8 };
+                let en_passant_index = mv.starting_square as isize + pawn_one_move_offset;
+                self.en_passant_square = Some(en_passant_index as usize);
+            }
+            Flag::EnPassantCapture => {
+                let starting_piece_color =
+                    self.colors[mv.starting_square].expect("cannot make a move from empty square");
+                let en_passant_square =
+                    saved_en_passant_square.expect("illegal en passant move played");
+                let captured_pawn_index = if starting_piece_color == Color::White {
+                    en_passant_square - 8
+                } else {
+                    en_passant_square + 8
+                };
+
+                self.squares[captured_pawn_index] = None;
+                self.colors[captured_pawn_index] = None;
+            }
+            _ => (),
+        }
+
+        self.squares[mv.target_square] = self.squares[mv.starting_square];
+        self.colors[mv.target_square] = self.colors[mv.starting_square];
         self.squares[mv.starting_square] = None;
         self.colors[mv.starting_square] = None;
-
-        if mv.flag == Flag::PawnDoublePush {
-            let pawn_one_move_offset = if self.to_move == Color::White { 8 } else { -8 };
-            let en_passant_index = mv.starting_square as isize + pawn_one_move_offset;
-            self.en_passant_square = Some(en_passant_index as usize)
-        }
 
         if self.to_move == Color::White {
             self.to_move = Color::Black;
@@ -452,5 +468,42 @@ mod tests {
 
         board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
         assert!(board.en_passant_square.is_none());
+    }
+
+    #[test]
+    fn test_en_passant_capture_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::G8, Square::F6, Flag::None))
+            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
+            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
+            .try_into()?;
+
+        board.move_piece(Move::from_square(Square::E5, Square::D6, Flag::EnPassantCapture));
+
+        assert!(board.is_square_empty(Square::D5.as_index()));
+        assert!(board.is_piece_at_square(Square::D6.as_index(), Piece::Pawn, Color::White));
+        assert!(board.en_passant_square.is_none());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_en_passant_capture_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::H1, Square::H2, Flag::None))
+            .make_move(Move::from_square(Square::E5, Square::E4, Flag::None))
+            .make_move(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        board.move_piece(Move::from_square(Square::E4, Square::D3, Flag::EnPassantCapture));
+
+        assert!(board.is_square_empty(Square::D4.as_index()));
+        assert!(board.is_piece_at_square(Square::D3.as_index(), Piece::Pawn, Color::Black));
+        assert!(board.en_passant_square.is_none());
+
+        Ok(())
     }
 }
