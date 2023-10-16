@@ -183,6 +183,12 @@ impl Board {
         let saved_en_passant_square = self.en_passant_square;
         self.en_passant_square = None;
 
+        if self.is_fifty_move_rule_resetting_move(&mv) {
+            self.half_move_clock = 0;
+        } else {
+            self.half_move_clock += 1;
+        }
+
         match mv.flag {
             Flag::PawnDoublePush => {
                 let pawn_one_move_offset = if self.to_move == Color::White { 8 } else { -8 };
@@ -219,6 +225,7 @@ impl Board {
             self.to_move = Color::Black;
         } else {
             self.to_move = Color::White;
+            self.full_move_number += 1;
         }
     }
 
@@ -237,6 +244,16 @@ impl Board {
     pub fn is_square_empty(&self, index: usize) -> bool {
         self.squares[index].is_none() && self.colors[index].is_none()
     }
+
+    fn is_fifty_move_rule_resetting_move(&self, mv: &Move) -> bool {
+        let is_pawn_move =
+            self.squares[mv.starting_square].is_some_and(|piece| piece == Piece::Pawn);
+
+        let is_non_en_passant_capture =
+            self.colors[mv.target_square].is_some_and(|color| color != self.to_move);
+
+        is_pawn_move || is_non_en_passant_capture
+    }
 }
 
 #[cfg(test)]
@@ -246,46 +263,46 @@ mod tests {
         board_builder::BoardBuilder,
         errors::BoardError,
         move_generation::{Flag, Move},
-        piece::{Color, Piece},
-        square::Square,
+        piece::{Color::*, Piece::*},
+        square::Square::*,
     };
 
     #[test]
     fn test_starting_position_board_config() {
         let board = Board::starting_position();
-        assert!(board.is_piece_at_square(Square::A1.as_index(), Piece::Rook, Color::White));
-        assert!(board.is_piece_at_square(Square::B1.as_index(), Piece::Knight, Color::White));
-        assert!(board.is_piece_at_square(Square::C1.as_index(), Piece::Bishop, Color::White));
-        assert!(board.is_piece_at_square(Square::D1.as_index(), Piece::Queen, Color::White));
-        assert!(board.is_piece_at_square(Square::E1.as_index(), Piece::King, Color::White));
-        assert!(board.is_piece_at_square(Square::F1.as_index(), Piece::Bishop, Color::White));
-        assert!(board.is_piece_at_square(Square::G1.as_index(), Piece::Knight, Color::White));
-        assert!(board.is_piece_at_square(Square::H1.as_index(), Piece::Rook, Color::White));
+        assert!(board.is_piece_at_square(A1.as_index(), Rook, White));
+        assert!(board.is_piece_at_square(B1.as_index(), Knight, White));
+        assert!(board.is_piece_at_square(C1.as_index(), Bishop, White));
+        assert!(board.is_piece_at_square(D1.as_index(), Queen, White));
+        assert!(board.is_piece_at_square(E1.as_index(), King, White));
+        assert!(board.is_piece_at_square(F1.as_index(), Bishop, White));
+        assert!(board.is_piece_at_square(G1.as_index(), Knight, White));
+        assert!(board.is_piece_at_square(H1.as_index(), Rook, White));
 
-        for i in Square::A2 as usize..=Square::H2 as usize {
-            assert_eq!(board.squares[i], Some(Piece::Pawn));
-            assert_eq!(board.colors[i], Some(Color::White))
+        for i in A2 as usize..=H2 as usize {
+            assert_eq!(board.squares[i], Some(Pawn));
+            assert_eq!(board.colors[i], Some(White))
         }
 
-        for i in Square::A3 as usize..=Square::H6 as usize {
+        for i in A3 as usize..=H6 as usize {
             assert_eq!(board.squares[i], None);
         }
 
-        for i in Square::A7 as usize..=Square::H7 as usize {
-            assert_eq!(board.squares[i], Some(Piece::Pawn));
-            assert_eq!(board.colors[i], Some(Color::Black))
+        for i in A7 as usize..=H7 as usize {
+            assert_eq!(board.squares[i], Some(Pawn));
+            assert_eq!(board.colors[i], Some(Black))
         }
 
-        assert!(board.is_piece_at_square(Square::A8.as_index(), Piece::Rook, Color::Black));
-        assert!(board.is_piece_at_square(Square::B8.as_index(), Piece::Knight, Color::Black));
-        assert!(board.is_piece_at_square(Square::C8.as_index(), Piece::Bishop, Color::Black));
-        assert!(board.is_piece_at_square(Square::D8.as_index(), Piece::Queen, Color::Black));
-        assert!(board.is_piece_at_square(Square::E8.as_index(), Piece::King, Color::Black));
-        assert!(board.is_piece_at_square(Square::F8.as_index(), Piece::Bishop, Color::Black));
-        assert!(board.is_piece_at_square(Square::G8.as_index(), Piece::Knight, Color::Black));
-        assert!(board.is_piece_at_square(Square::H8.as_index(), Piece::Rook, Color::Black));
+        assert!(board.is_piece_at_square(A8.as_index(), Rook, Black));
+        assert!(board.is_piece_at_square(B8.as_index(), Knight, Black));
+        assert!(board.is_piece_at_square(C8.as_index(), Bishop, Black));
+        assert!(board.is_piece_at_square(D8.as_index(), Queen, Black));
+        assert!(board.is_piece_at_square(E8.as_index(), King, Black));
+        assert!(board.is_piece_at_square(F8.as_index(), Bishop, Black));
+        assert!(board.is_piece_at_square(G8.as_index(), Knight, Black));
+        assert!(board.is_piece_at_square(H8.as_index(), Rook, Black));
 
-        assert_eq!(board.to_move, Color::White);
+        assert_eq!(board.to_move, White);
         assert_eq!(board.en_passant_square, None);
         assert!(board.can_white_king_side_castle);
         assert!(board.can_white_queen_side_castle);
@@ -308,12 +325,9 @@ mod tests {
     #[test]
     fn test_from_fen_sicilian_defense() -> Result<(), BoardError> {
         let starting_board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::C7, Square::C5, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
-            // TODO: Remove this manual value set when move increment in implemented
-            .half_move_clock(1)
-            .full_move_number(2)
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(C7, C5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
             .try_into()?;
 
         // Position after 1. e4, c5 => 2. Nf3
@@ -328,20 +342,20 @@ mod tests {
     #[test]
     fn test_from_puzzle_fen() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::new()
-            .piece(Square::D1, Piece::Bishop, Color::Black)
-            .piece(Square::A2, Piece::Pawn, Color::White)
-            .piece(Square::B2, Piece::Pawn, Color::White)
-            .piece(Square::F2, Piece::King, Color::White)
-            .piece(Square::H2, Piece::Pawn, Color::White)
-            .piece(Square::D4, Piece::Pawn, Color::White)
-            .piece(Square::E4, Piece::Pawn, Color::Black)
-            .piece(Square::A6, Piece::Pawn, Color::Black)
-            .piece(Square::G6, Piece::Pawn, Color::Black)
-            .piece(Square::B7, Piece::Pawn, Color::Black)
-            .piece(Square::E7, Piece::Pawn, Color::Black)
-            .piece(Square::C7, Piece::Rook, Color::White)
-            .piece(Square::H7, Piece::Pawn, Color::Black)
-            .piece(Square::F8, Piece::King, Color::Black)
+            .piece(D1, Bishop, Black)
+            .piece(A2, Pawn, White)
+            .piece(B2, Pawn, White)
+            .piece(F2, King, White)
+            .piece(H2, Pawn, White)
+            .piece(D4, Pawn, White)
+            .piece(E4, Pawn, Black)
+            .piece(A6, Pawn, Black)
+            .piece(G6, Pawn, Black)
+            .piece(B7, Pawn, Black)
+            .piece(E7, Pawn, Black)
+            .piece(C7, Rook, White)
+            .piece(H7, Pawn, Black)
+            .piece(F8, King, Black)
             .half_move_clock(1)
             .full_move_number(31)
             .try_into()?;
@@ -371,14 +385,11 @@ mod tests {
     #[test]
     fn test_to_fen_italian_game() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
-            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
-            .make_move(Move::from_square(Square::F1, Square::C4, Flag::None))
-            // TODO: Remove this manual value set when move increment in implemented
-            .half_move_clock(3)
-            .full_move_number(3)
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
             .try_into()?;
 
         assert_eq!(
@@ -391,20 +402,17 @@ mod tests {
     #[test]
     fn test_to_fen_advanced_caro_kann() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::C7, Square::C6, Flag::None))
-            .make_move(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
-            .make_move(Move::from_square(Square::C8, Square::F5, Flag::None))
-            .make_move(Move::from_square(Square::F1, Square::E2, Flag::None))
-            .make_move(Move::from_square(Square::E7, Square::E6, Flag::None))
-            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
-            .make_move(Move::from_square(Square::C6, Square::C5, Flag::None))
-            .make_move(Move::from_square(Square::C1, Square::E3, Flag::None))
-            // TODO: Remove this manual value set when move increment in implemented
-            .half_move_clock(1)
-            .full_move_number(6)
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(C7, C6, Flag::None))
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E4, E5, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(F1, E2, Flag::None))
+            .make_move(Move::from_square(E7, E6, Flag::None))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(C6, C5, Flag::None))
+            .make_move(Move::from_square(C1, E3, Flag::None))
             .try_into()?;
 
         assert_eq!(
@@ -417,36 +425,36 @@ mod tests {
     #[test]
     fn test_to_fen_marshall_attack() -> Result<(), BoardError> {
         let board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
-            .make_move(Move::from_square(Square::B8, Square::C6, Flag::None))
-            .make_move(Move::from_square(Square::F1, Square::B5, Flag::None))
-            .make_move(Move::from_square(Square::A7, Square::A6, Flag::None))
-            .make_move(Move::from_square(Square::B5, Square::A4, Flag::None))
-            .make_move(Move::from_square(Square::G8, Square::F6, Flag::None))
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(F1, B5, Flag::None))
+            .make_move(Move::from_square(A7, A6, Flag::None))
+            .make_move(Move::from_square(B5, A4, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
             // TODO: Handle castling
-            .make_move(Move::from_square(Square::E1, Square::G1, Flag::None))
-            .make_move(Move::from_square(Square::H1, Square::F1, Flag::None))
+            .make_move(Move::from_square(E1, G1, Flag::None))
+            .make_move(Move::from_square(H1, F1, Flag::None))
             // end
-            .make_move(Move::from_square(Square::F8, Square::E7, Flag::None))
-            .make_move(Move::from_square(Square::F1, Square::E1, Flag::None))
-            .make_move(Move::from_square(Square::B7, Square::B5, Flag::None))
-            .make_move(Move::from_square(Square::A4, Square::B3, Flag::None))
+            .make_move(Move::from_square(F8, E7, Flag::None))
+            .make_move(Move::from_square(F1, E1, Flag::None))
+            .make_move(Move::from_square(B7, B5, Flag::None))
+            .make_move(Move::from_square(A4, B3, Flag::None))
             // TODO: Handle castling
-            .make_move(Move::from_square(Square::E8, Square::G8, Flag::None))
-            .make_move(Move::from_square(Square::H8, Square::F8, Flag::None))
+            .make_move(Move::from_square(E8, G8, Flag::None))
+            .make_move(Move::from_square(H8, F8, Flag::None))
             // end
-            .make_move(Move::from_square(Square::C2, Square::C3, Flag::None))
-            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(C2, C3, Flag::None))
+            .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
             // TODO: Remove this manual value set when move increment in implemented
             .half_move_clock(0)
             .full_move_number(9)
             // TODO: Remove this when castling is properly handled
-            .can_king_side_castle(Color::White, false)
-            .can_king_side_castle(Color::Black, false)
-            .can_queen_side_castle(Color::White, false)
-            .can_queen_side_castle(Color::Black, false)
+            .can_king_side_castle(White, false)
+            .can_king_side_castle(Black, false)
+            .can_queen_side_castle(White, false)
+            .can_queen_side_castle(Black, false)
             .try_into()?;
 
         assert_eq!(
@@ -460,33 +468,33 @@ mod tests {
     fn test_pawn_double_push_registers_en_passant_square() {
         let mut board = Board::starting_position();
 
-        board.move_piece(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush));
+        board.move_piece(Move::from_square(E2, E4, Flag::PawnDoublePush));
         assert!(board
             .en_passant_square
-            .is_some_and(|square| square == Square::E3.as_index()));
+            .is_some_and(|square| square == E3.as_index()));
 
-        board.move_piece(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush));
+        board.move_piece(Move::from_square(E7, E5, Flag::PawnDoublePush));
         assert!(board
             .en_passant_square
-            .is_some_and(|square| square == Square::E6.as_index()));
+            .is_some_and(|square| square == E6.as_index()));
 
-        board.move_piece(Move::from_square(Square::G1, Square::F3, Flag::None));
+        board.move_piece(Move::from_square(G1, F3, Flag::None));
         assert!(board.en_passant_square.is_none());
     }
 
     #[test]
     fn test_en_passant_capture_white() -> Result<(), BoardError> {
         let mut board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::G8, Square::F6, Flag::None))
-            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
-            .make_move(Move::from_square(Square::D7, Square::D5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(E4, E5, Flag::None))
+            .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
             .try_into()?;
 
-        board.move_piece(Move::from_square(Square::E5, Square::D6, Flag::EnPassantCapture));
+        board.move_piece(Move::from_square(E5, D6, Flag::EnPassantCapture));
 
-        assert!(board.is_square_empty(Square::D5.as_index()));
-        assert!(board.is_piece_at_square(Square::D6.as_index(), Piece::Pawn, Color::White));
+        assert!(board.is_square_empty(D5.as_index()));
+        assert!(board.is_piece_at_square(D6.as_index(), Pawn, White));
         assert!(board.en_passant_square.is_none());
 
         Ok(())
@@ -495,17 +503,17 @@ mod tests {
     #[test]
     fn test_en_passant_capture_black() -> Result<(), BoardError> {
         let mut board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::G1, Square::F3, Flag::None))
-            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::H1, Square::H2, Flag::None))
-            .make_move(Move::from_square(Square::E5, Square::E4, Flag::None))
-            .make_move(Move::from_square(Square::D2, Square::D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(H1, H2, Flag::None))
+            .make_move(Move::from_square(E5, E4, Flag::None))
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .try_into()?;
 
-        board.move_piece(Move::from_square(Square::E4, Square::D3, Flag::EnPassantCapture));
+        board.move_piece(Move::from_square(E4, D3, Flag::EnPassantCapture));
 
-        assert!(board.is_square_empty(Square::D4.as_index()));
-        assert!(board.is_piece_at_square(Square::D3.as_index(), Piece::Pawn, Color::Black));
+        assert!(board.is_square_empty(D4.as_index()));
+        assert!(board.is_piece_at_square(D3.as_index(), Pawn, Black));
         assert!(board.en_passant_square.is_none());
 
         Ok(())
@@ -514,19 +522,15 @@ mod tests {
     #[test]
     fn test_pawn_promotion_white() -> Result<(), BoardError> {
         let mut board: Board = BoardBuilder::new()
-            .piece(Square::H7, Piece::Pawn, Color::White)
-            .piece(Square::E1, Piece::King, Color::White)
-            .piece(Square::E8, Piece::King, Color::Black)
+            .piece(H7, Pawn, White)
+            .piece(E1, King, White)
+            .piece(E8, King, Black)
             .try_into()?;
 
-        board.move_piece(Move::from_square(
-            Square::H7,
-            Square::H8,
-            Flag::PromoteTo(Piece::Queen),
-        ));
+        board.move_piece(Move::from_square(H7, H8, Flag::PromoteTo(Queen)));
 
-        assert!(board.is_square_empty(Square::H7.as_index()));
-        assert!(board.is_piece_at_square(Square::H8.as_index(), Piece::Queen, Color::White));
+        assert!(board.is_square_empty(H7.as_index()));
+        assert!(board.is_piece_at_square(H8.as_index(), Queen, White));
 
         Ok(())
     }
@@ -534,20 +538,16 @@ mod tests {
     #[test]
     fn test_pawn_promotion_black() -> Result<(), BoardError> {
         let mut board: Board = BoardBuilder::new()
-            .piece(Square::H2, Piece::Pawn, Color::Black)
-            .piece(Square::E1, Piece::King, Color::White)
-            .piece(Square::E8, Piece::King, Color::Black)
-            .to_move(Color::Black)
+            .piece(H2, Pawn, Black)
+            .piece(E1, King, White)
+            .piece(E8, King, Black)
+            .to_move(Black)
             .try_into()?;
 
-        board.move_piece(Move::from_square(
-            Square::H2,
-            Square::H1,
-            Flag::PromoteTo(Piece::Queen),
-        ));
+        board.move_piece(Move::from_square(H2, H1, Flag::PromoteTo(Queen)));
 
-        assert!(board.is_square_empty(Square::H2.as_index()));
-        assert!(board.is_piece_at_square(Square::H1.as_index(), Piece::Queen, Color::Black));
+        assert!(board.is_square_empty(H2.as_index()));
+        assert!(board.is_piece_at_square(H1.as_index(), Queen, Black));
 
         Ok(())
     }
@@ -556,13 +556,40 @@ mod tests {
     #[should_panic]
     fn test_invalid_en_passant_move_panic() {
         let mut board: Board = BoardBuilder::from_starting_position()
-            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
-            .make_move(Move::from_square(Square::D7, Square::D6, Flag::None))
-            .make_move(Move::from_square(Square::E4, Square::E5, Flag::None))
-            .make_move(Move::from_square(Square::D6, Square::D5, Flag::None))
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::None))
+            .make_move(Move::from_square(E4, E5, Flag::None))
+            .make_move(Move::from_square(D6, D5, Flag::None))
             .try_into()
             .unwrap();
 
-        board.move_piece(Move::from_square(Square::E5, Square::D6, Flag::EnPassantCapture));
+        board.move_piece(Move::from_square(E5, D6, Flag::EnPassantCapture));
+    }
+
+    #[test]
+    fn test_is_fifty_move_rule_resetting_move_pawn_push() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        assert!(board.half_move_clock == 0);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_fifty_move_rule_resetting_move_capture() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(F6, E4, Flag::None))
+            .try_into()?;
+
+        assert!(board.half_move_clock == 0);
+
+        Ok(())
     }
 }
