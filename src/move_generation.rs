@@ -333,22 +333,6 @@ impl MoveGenerator {
         }
     }
 
-    #[allow(unused)]
-    fn can_queenside_castle(&self) -> bool {
-        match self.board.to_move {
-            Color::White => {
-                self.board.white_queenside_castling_priviledge
-                    && self.board.squares[Square::D1.as_index()].is_none()
-                    && self.board.squares[Square::C1.as_index()].is_none()
-            }
-            Color::Black => {
-                self.board.black_queenside_castling_priviledge
-                    && self.board.squares[Square::D8.as_index()].is_none()
-                    && self.board.squares[Square::C8.as_index()].is_none()
-            }
-        }
-    }
-
     #[cfg(test)]
     fn generated_move(&self, start: Square, target: Square, flag: Flag) -> bool {
         self.moves.contains(&Move::from_square(start, target, flag))
