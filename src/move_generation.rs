@@ -48,7 +48,8 @@ impl fmt::Debug for Move {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Flag {
     None,
-    Castle,
+    KingsideCastle,
+    QueensideCastle,
     PawnDoublePush,
     EnPassantCapture,
     PromoteTo(Piece),
@@ -334,7 +335,18 @@ impl MoveGenerator {
 
     #[allow(unused)]
     fn can_queenside_castle(&self) -> bool {
-        false
+        match self.board.to_move {
+            Color::White => {
+                self.board.white_queenside_castling_priviledge
+                    && self.board.squares[Square::D1.as_index()].is_none()
+                    && self.board.squares[Square::C1.as_index()].is_none()
+            }
+            Color::Black => {
+                self.board.black_queenside_castling_priviledge
+                    && self.board.squares[Square::D8.as_index()].is_none()
+                    && self.board.squares[Square::C8.as_index()].is_none()
+            }
+        }
     }
 
     #[cfg(test)]
