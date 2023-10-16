@@ -316,6 +316,27 @@ impl MoveGenerator {
         (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2
     }
 
+    #[allow(unused)]
+    fn can_king_side_castle(&self) -> bool {
+        match self.board.to_move {
+            Color::White => {
+                self.board.white_king_side_castling_priviledge
+                    && self.board.squares[Square::F1.as_index()].is_none()
+                    && self.board.squares[Square::G1.as_index()].is_none()
+            }
+            Color::Black => {
+                self.board.black_king_side_castling_priviledge
+                    && self.board.squares[Square::F8.as_index()].is_none()
+                    && self.board.squares[Square::G8.as_index()].is_none()
+            }
+        }
+    }
+
+    #[allow(unused)]
+    fn can_queen_side_castle(&self) -> bool {
+        false
+    }
+
     #[cfg(test)]
     fn generated_move(&self, start: Square, target: Square, flag: Flag) -> bool {
         self.moves.contains(&Move::from_square(start, target, flag))
@@ -324,6 +345,7 @@ impl MoveGenerator {
 
 #[cfg(test)]
 mod tests {
+    use crate::board::Board;
     use crate::board_builder::BoardBuilder;
     use crate::errors::BoardError;
     use crate::move_generation::{Flag, Move, MoveGenerator};
@@ -573,11 +595,10 @@ mod tests {
         let mut move_generator = MoveGenerator::default();
 
         for square in 0..64 {
-            if move_generator.board.is_piece_at_square(
-                square,
-                Pawn,
-                move_generator.board.to_move,
-            ) {
+            if move_generator
+                .board
+                .is_piece_at_square(square, Pawn, move_generator.board.to_move)
+            {
                 move_generator.generate_pawn_moves(square);
             }
         }
@@ -610,11 +631,10 @@ mod tests {
         let mut move_generator = MoveGenerator::new(board);
 
         for square in 0..64 {
-            if move_generator.board.is_piece_at_square(
-                square,
-                Pawn,
-                move_generator.board.to_move,
-            ) {
+            if move_generator
+                .board
+                .is_piece_at_square(square, Pawn, move_generator.board.to_move)
+            {
                 move_generator.generate_pawn_moves(square);
             }
         }
@@ -1402,6 +1422,100 @@ mod tests {
         assert!(move_generator.generated_move(A8, A7, Flag::None));
         assert!(move_generator.generated_move(A8, B8, Flag::None));
         assert!(move_generator.generated_move(A8, B7, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_starting_position_white() -> Result<(), BoardError> {
+        let board = Board::starting_position();
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.can_king_side_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_white_true() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(G8, C5, Flag::None))
+            .try_into()?;
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(move_generator.can_king_side_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_blocked_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .try_into()?;
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.can_king_side_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_starting_position_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.can_king_side_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_black_true() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(H2, H3, Flag::None))
+            .try_into()?;
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(move_generator.can_king_side_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_can_king_side_castle_blocked_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .try_into()?;
+
+        let move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.can_king_side_castle());
 
         Ok(())
     }
