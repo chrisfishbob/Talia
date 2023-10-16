@@ -176,8 +176,7 @@ impl Board {
     }
 
     // TODO: Should this return an error?
-    // TODO: Handle en passant, castling, promotion, ...
-    // TODO: Handle move increment
+    // TODO: Handle castling
     pub fn move_piece(&mut self, mv: Move) {
         // With every move, the ability to en passant expires until a double pawn push
         let saved_en_passant_square = self.en_passant_square;
