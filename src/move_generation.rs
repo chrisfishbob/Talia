@@ -317,15 +317,15 @@ impl MoveGenerator {
     }
 
     #[allow(unused)]
-    fn can_king_side_castle(&self) -> bool {
+    fn can_kingside_castle(&self) -> bool {
         match self.board.to_move {
             Color::White => {
-                self.board.white_king_side_castling_priviledge
+                self.board.white_kingside_castling_priviledge
                     && self.board.squares[Square::F1.as_index()].is_none()
                     && self.board.squares[Square::G1.as_index()].is_none()
             }
             Color::Black => {
-                self.board.black_king_side_castling_priviledge
+                self.board.black_kingside_castling_priviledge
                     && self.board.squares[Square::F8.as_index()].is_none()
                     && self.board.squares[Square::G8.as_index()].is_none()
             }
@@ -333,7 +333,7 @@ impl MoveGenerator {
     }
 
     #[allow(unused)]
-    fn can_queen_side_castle(&self) -> bool {
+    fn can_queenside_castle(&self) -> bool {
         false
     }
 
@@ -1427,18 +1427,18 @@ mod tests {
     }
 
     #[test]
-    fn test_can_king_side_castle_starting_position_white() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_starting_position_white() -> Result<(), BoardError> {
         let board = Board::starting_position();
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(!move_generator.can_king_side_castle());
+        assert!(!move_generator.can_kingside_castle());
 
         Ok(())
     }
 
     #[test]
-    fn test_can_king_side_castle_white_true() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_white_true() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1450,13 +1450,13 @@ mod tests {
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(move_generator.can_king_side_castle());
+        assert!(move_generator.can_kingside_castle());
 
         Ok(())
     }
 
     #[test]
-    fn test_can_king_side_castle_blocked_white() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_blocked_white() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1466,26 +1466,26 @@ mod tests {
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(!move_generator.can_king_side_castle());
+        assert!(!move_generator.can_kingside_castle());
 
         Ok(())
     }
 
     #[test]
-    fn test_can_king_side_castle_starting_position_black() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_starting_position_black() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .try_into()?;
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(!move_generator.can_king_side_castle());
+        assert!(!move_generator.can_kingside_castle());
 
         Ok(())
     }
 
     #[test]
-    fn test_can_king_side_castle_black_true() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_black_true() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1498,13 +1498,13 @@ mod tests {
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(move_generator.can_king_side_castle());
+        assert!(move_generator.can_kingside_castle());
 
         Ok(())
     }
 
     #[test]
-    fn test_can_king_side_castle_blocked_black() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_blocked_black() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1515,7 +1515,7 @@ mod tests {
 
         let move_generator = MoveGenerator::new(board);
 
-        assert!(!move_generator.can_king_side_castle());
+        assert!(!move_generator.can_kingside_castle());
 
         Ok(())
     }
