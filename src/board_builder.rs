@@ -43,18 +43,18 @@ impl BoardBuilder {
 
     pub fn can_king_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.can_white_king_side_castle = castle;
+            self.board.white_king_side_castling_priviledge = castle;
         } else {
-            self.board.can_black_king_side_castle = castle;
+            self.board.black_king_side_castling_priviledge = castle;
         }
         self
     }
 
     pub fn can_queen_side_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.can_white_queen_side_castle = castle;
+            self.board.white_queen_side_castling_priviledge = castle;
         } else {
-            self.board.can_black_queen_side_castle = castle;
+            self.board.black_queen_side_castling_priviledge = castle;
         }
         self
     }
@@ -153,10 +153,10 @@ impl BoardBuilder {
             colors,
             to_move,
             en_passant_square: Self::parse_en_passant_square(fen_string_fields[3])?,
-            can_white_king_side_castle: castling_rights.contains(&'K'),
-            can_black_king_side_castle: castling_rights.contains(&'k'),
-            can_white_queen_side_castle: castling_rights.contains(&'Q'),
-            can_black_queen_side_castle: castling_rights.contains(&'q'),
+            white_king_side_castling_priviledge: castling_rights.contains(&'K'),
+            black_king_side_castling_priviledge: castling_rights.contains(&'k'),
+            white_queen_side_castling_priviledge: castling_rights.contains(&'Q'),
+            black_queen_side_castling_priviledge: castling_rights.contains(&'q'),
             half_move_clock,
             full_move_number,
         })

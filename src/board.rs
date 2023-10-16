@@ -8,10 +8,10 @@ pub struct Board {
     pub squares: [Option<Piece>; 64],
     pub colors: [Option<Color>; 64],
     pub to_move: Color,
-    pub can_white_king_side_castle: bool,
-    pub can_black_king_side_castle: bool,
-    pub can_white_queen_side_castle: bool,
-    pub can_black_queen_side_castle: bool,
+    pub white_king_side_castling_priviledge: bool,
+    pub black_king_side_castling_priviledge: bool,
+    pub white_queen_side_castling_priviledge: bool,
+    pub black_queen_side_castling_priviledge: bool,
     pub en_passant_square: Option<usize>,
     pub half_move_clock: u32,
     pub full_move_number: u32,
@@ -23,10 +23,10 @@ impl Default for Board {
             squares: [None; 64],
             colors: [None; 64],
             to_move: Color::White,
-            can_white_king_side_castle: false,
-            can_white_queen_side_castle: false,
-            can_black_king_side_castle: false,
-            can_black_queen_side_castle: false,
+            white_king_side_castling_priviledge: false,
+            white_queen_side_castling_priviledge: false,
+            black_king_side_castling_priviledge: false,
+            black_queen_side_castling_priviledge: false,
             en_passant_square: None,
             half_move_clock: 0,
             full_move_number: 1,
@@ -80,10 +80,10 @@ impl fmt::Debug for Board {
             Some(square) => writeln!(f, "en passant square: {:?}", square)?,
             None => writeln!(f, "no en passant square")?,
         };
-        writeln!(f, "Can white king side castle: {}", self.can_white_king_side_castle)?;
-        writeln!(f, "Can white queen side castle: {}", self.can_white_king_side_castle)?;
-        writeln!(f, "Can black king side castle: {}", self.can_black_king_side_castle)?;
-        writeln!(f, "Can black queen side castle: {}", self.can_black_king_side_castle)?;
+        writeln!(f, "Can white king side castle: {}", self.white_king_side_castling_priviledge)?;
+        writeln!(f, "Can white queen side castle: {}", self.white_king_side_castling_priviledge)?;
+        writeln!(f, "Can black king side castle: {}", self.black_king_side_castling_priviledge)?;
+        writeln!(f, "Can black queen side castle: {}", self.black_king_side_castling_priviledge)?;
         writeln!(f, "half move clock: {}", self.half_move_clock)?;
         writeln!(f, "full move number: {}", self.full_move_number)
     }
@@ -129,22 +129,22 @@ impl Board {
         };
 
         fen.push(' ');
-        if self.can_white_king_side_castle {
+        if self.white_king_side_castling_priviledge {
             fen.push('K');
         }
-        if self.can_white_queen_side_castle {
+        if self.white_queen_side_castling_priviledge {
             fen.push('Q');
         }
-        if self.can_black_king_side_castle {
+        if self.black_king_side_castling_priviledge {
             fen.push('k');
         }
-        if self.can_black_queen_side_castle {
+        if self.black_queen_side_castling_priviledge {
             fen.push('q');
         }
-        if !(self.can_white_king_side_castle
-            || self.can_white_queen_side_castle
-            || self.can_black_king_side_castle
-            || self.can_black_queen_side_castle)
+        if !(self.white_king_side_castling_priviledge
+            || self.white_queen_side_castling_priviledge
+            || self.black_king_side_castling_priviledge
+            || self.black_queen_side_castling_priviledge)
         {
             fen.push('-')
         }
@@ -303,10 +303,10 @@ mod tests {
 
         assert_eq!(board.to_move, White);
         assert_eq!(board.en_passant_square, None);
-        assert!(board.can_white_king_side_castle);
-        assert!(board.can_white_queen_side_castle);
-        assert!(board.can_black_king_side_castle);
-        assert!(board.can_black_queen_side_castle);
+        assert!(board.white_king_side_castling_priviledge);
+        assert!(board.white_queen_side_castling_priviledge);
+        assert!(board.black_king_side_castling_priviledge);
+        assert!(board.black_queen_side_castling_priviledge);
         assert_eq!(board.half_move_clock, 0);
         assert_eq!(board.full_move_number, 1);
     }
