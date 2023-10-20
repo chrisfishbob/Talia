@@ -192,7 +192,6 @@ impl Board {
         fen
     }
 
-    // TODO: Handle castling
     pub fn move_piece(&mut self, mv: Move) {
         // With every move, the ability to en passant expires until a double pawn push
         let saved_en_passant_square = self.en_passant_square;
@@ -225,41 +224,11 @@ impl Board {
                 self.colors[captured_pawn_index] = None;
             }
             Flag::KingsideCastle => {
-                if let Color::White = self.to_move {
-                    // Move the king
-                    self.squares[Square::G1.as_index()] = self.squares[mv.starting_square];
-                    self.colors[Square::G1.as_index()] = self.colors[mv.starting_square];
-                    self.squares[mv.starting_square] = None;
-                    self.colors[mv.starting_square] = None;
-                    // Move the rook
-                    self.squares[Square::F1.as_index()] = self.squares[Square::H1.as_index()];
-                    self.colors[Square::F1.as_index()] = self.colors[Square::H1.as_index()];
-                    self.squares[Square::H1.as_index()] = None;
-                    self.colors[Square::H1.as_index()] = None;
-
-                    self.white_kingside_castling_priviledge = false;
-                } else {
-                    // Move the king
-                    self.squares[Square::G8.as_index()] = self.squares[mv.starting_square];
-                    self.colors[Square::G8.as_index()] = self.colors[mv.starting_square];
-                    self.squares[mv.starting_square] = None;
-                    self.colors[mv.starting_square] = None;
-                    // Move the rook
-                    self.squares[Square::F8.as_index()] = self.squares[Square::H8.as_index()];
-                    self.colors[Square::F8.as_index()] = self.colors[Square::H8.as_index()];
-                    self.squares[Square::H8.as_index()] = None;
-                    self.colors[Square::H8.as_index()] = None;
-
-                    self.black_kingside_castling_priviledge = false;
-                }
-
-                if self.to_move == Color::White {
-                    self.to_move = Color::Black;
-                } else {
-                    self.to_move = Color::White;
-                    self.full_move_number += 1;
-                }
-
+                self.make_kingside_castling_move(mv);
+                return;
+            }
+            Flag::QueensideCastle => {
+                self.make_queenside_castling_move(mv);
                 return;
             }
             _ => (),
@@ -382,6 +351,85 @@ impl Board {
             self.colors[mv.target_square].is_some_and(|color| color != self.to_move);
 
         is_pawn_move || is_non_en_passant_capture
+    }
+
+    // TODO: Refactor how the board stores castling priviledges so we can clean this up
+    fn make_kingside_castling_move(&mut self, mv: Move) {
+        if let Color::White = self.to_move {
+            // Move the king
+            self.squares[Square::G1.as_index()] = self.squares[mv.starting_square];
+            self.colors[Square::G1.as_index()] = self.colors[mv.starting_square];
+            self.squares[mv.starting_square] = None;
+            self.colors[mv.starting_square] = None;
+            // Move the rook
+            self.squares[Square::F1.as_index()] = self.squares[Square::H1.as_index()];
+            self.colors[Square::F1.as_index()] = self.colors[Square::H1.as_index()];
+            self.squares[Square::H1.as_index()] = None;
+            self.colors[Square::H1.as_index()] = None;
+
+            self.white_kingside_castling_priviledge = false;
+            self.white_queenside_castling_priviledge = false;
+        } else {
+            // Move the king
+            self.squares[Square::G8.as_index()] = self.squares[mv.starting_square];
+            self.colors[Square::G8.as_index()] = self.colors[mv.starting_square];
+            self.squares[mv.starting_square] = None;
+            self.colors[mv.starting_square] = None;
+            // Move the rook
+            self.squares[Square::F8.as_index()] = self.squares[Square::H8.as_index()];
+            self.colors[Square::F8.as_index()] = self.colors[Square::H8.as_index()];
+            self.squares[Square::H8.as_index()] = None;
+            self.colors[Square::H8.as_index()] = None;
+
+            self.black_kingside_castling_priviledge = false;
+            self.black_queenside_castling_priviledge = false;
+        }
+
+        if self.to_move == Color::White {
+            self.to_move = Color::Black;
+        } else {
+            self.to_move = Color::White;
+            self.full_move_number += 1;
+        }
+    }
+
+    fn make_queenside_castling_move(&mut self, mv: Move) {
+        if let Color::White = self.to_move {
+            // Move the king
+            self.squares[Square::C1.as_index()] = self.squares[mv.starting_square];
+            self.colors[Square::C1.as_index()] = self.colors[mv.starting_square];
+            self.squares[mv.starting_square] = None;
+            self.colors[mv.starting_square] = None;
+            // Move the rook
+            self.squares[Square::D1.as_index()] = self.squares[Square::A1.as_index()];
+            self.colors[Square::D1.as_index()] = self.colors[Square::A1.as_index()];
+            self.squares[Square::A1.as_index()] = None;
+            self.colors[Square::A1.as_index()] = None;
+
+            self.white_kingside_castling_priviledge = false;
+            self.white_queenside_castling_priviledge = false;
+        } else {
+            // Move the king
+            self.squares[Square::C8.as_index()] = self.squares[mv.starting_square];
+            self.colors[Square::C8.as_index()] = self.colors[mv.starting_square];
+            self.squares[mv.starting_square] = None;
+            self.colors[mv.starting_square] = None;
+            // Move the rook
+            self.squares[Square::D8.as_index()] = self.squares[Square::A8.as_index()];
+            self.colors[Square::D8.as_index()] = self.colors[Square::A8.as_index()];
+            self.squares[Square::A8.as_index()] = None;
+            self.colors[Square::A8.as_index()] = None;
+
+            self.black_kingside_castling_priviledge = false;
+            self.black_queenside_castling_priviledge = false;
+        }
+
+        if self.to_move == Color::White {
+            self.to_move = Color::Black;
+        } else {
+            self.to_move = Color::White;
+            self.full_move_number += 1;
+        }
     }
 }
 
@@ -562,28 +610,14 @@ mod tests {
             .make_move(Move::from_square(A7, A6, Flag::None))
             .make_move(Move::from_square(B5, A4, Flag::None))
             .make_move(Move::from_square(G8, F6, Flag::None))
-            // TODO: Handle castling
-            .make_move(Move::from_square(E1, G1, Flag::None))
-            .make_move(Move::from_square(H1, F1, Flag::None))
-            // end
+            .make_move(Move::from_square(E1, G1, Flag::KingsideCastle))
             .make_move(Move::from_square(F8, E7, Flag::None))
             .make_move(Move::from_square(F1, E1, Flag::None))
             .make_move(Move::from_square(B7, B5, Flag::None))
             .make_move(Move::from_square(A4, B3, Flag::None))
-            // TODO: Handle castling
-            .make_move(Move::from_square(E8, G8, Flag::None))
-            .make_move(Move::from_square(H8, F8, Flag::None))
-            // end
+            .make_move(Move::from_square(E8, G8, Flag::KingsideCastle))
             .make_move(Move::from_square(C2, C3, Flag::None))
             .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
-            // TODO: Remove this manual value set when move increment in implemented
-            .half_move_clock(0)
-            .full_move_number(9)
-            // TODO: Remove this when castling is properly handled
-            .can_kingside_castle(White, false)
-            .can_kingside_castle(Black, false)
-            .can_queenside_castle(White, false)
-            .can_queenside_castle(Black, false)
             .try_into()?;
 
         assert_eq!(
@@ -914,6 +948,7 @@ mod tests {
         assert!(board.is_piece_at_square(F1.as_index(), Rook, White));
 
         assert!(!board.white_kingside_castling_priviledge);
+        assert!(!board.white_queenside_castling_priviledge);
 
         Ok(())
     }
@@ -940,6 +975,64 @@ mod tests {
         assert!(board.is_piece_at_square(F8.as_index(), Rook, Black));
 
         assert!(!board.black_kingside_castling_priviledge);
+        assert!(!board.black_queenside_castling_priviledge);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_board_state_after_queenside_castling_white() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
+            .try_into()?;
+
+        assert!(board.squares[E1.as_index()].is_none());
+        assert!(board.colors[E1.as_index()].is_none());
+        assert!(board.squares[A1.as_index()].is_none());
+        assert!(board.colors[A1.as_index()].is_none());
+
+        assert!(board.is_piece_at_square(C1.as_index(), King, White));
+        assert!(board.is_piece_at_square(D1.as_index(), Rook, White));
+
+        assert!(!board.white_kingside_castling_priviledge);
+        assert!(!board.white_queenside_castling_priviledge);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_board_state_after_queenside_castling_black() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
+            .make_move(Move::from_square(E8, C8, Flag::QueensideCastle))
+            .try_into()?;
+
+        assert!(board.squares[E8.as_index()].is_none());
+        assert!(board.colors[E8.as_index()].is_none());
+        assert!(board.squares[A8.as_index()].is_none());
+        assert!(board.colors[A8.as_index()].is_none());
+
+        assert!(board.is_piece_at_square(C8.as_index(), King, Black));
+        assert!(board.is_piece_at_square(D8.as_index(), Rook, Black));
+
+        assert!(!board.black_kingside_castling_priviledge);
+        assert!(!board.black_queenside_castling_priviledge);
 
         Ok(())
     }
