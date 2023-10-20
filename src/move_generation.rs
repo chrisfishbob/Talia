@@ -265,6 +265,62 @@ impl MoveGenerator {
                 self.moves
                     .push(Move::new(start_square, target_square, Flag::None));
             }
+
+            // TODO: Refactor this
+            match self.board.to_move {
+                Color::White => {
+                    let kingside_castling_path_clear = self.board.squares[Square::F1.as_index()]
+                        .is_none()
+                        && self.board.squares[Square::G1.as_index()].is_none();
+                    if self.board.white_kingside_castling_priviledge && kingside_castling_path_clear
+                    {
+                        self.moves.push(Move::new(
+                            start_square,
+                            Square::G1.as_index(),
+                            Flag::KingsideCastle,
+                        ));
+                    }
+
+                    let queenside_castling_path_clear = self.board.squares[Square::D1.as_index()]
+                        .is_none()
+                        && self.board.squares[Square::C1.as_index()].is_none();
+                    if self.board.white_queenside_castling_priviledge
+                        && queenside_castling_path_clear
+                    {
+                        self.moves.push(Move::new(
+                            start_square,
+                            Square::C1.as_index(),
+                            Flag::QueensideCastle,
+                        ))
+                    }
+                }
+                Color::Black => { 
+                    let kingside_castling_path_clear = self.board.squares[Square::F8.as_index()]
+                        .is_none()
+                        && self.board.squares[Square::G8.as_index()].is_none();
+                    if self.board.white_kingside_castling_priviledge && kingside_castling_path_clear
+                    {
+                        self.moves.push(Move::new(
+                            start_square,
+                            Square::G8.as_index(),
+                            Flag::KingsideCastle,
+                        ));
+                    }
+
+                    let queenside_castling_path_clear = self.board.squares[Square::D8.as_index()]
+                        .is_none()
+                        && self.board.squares[Square::C8.as_index()].is_none();
+                    if self.board.white_queenside_castling_priviledge
+                        && queenside_castling_path_clear
+                    {
+                        self.moves.push(Move::new(
+                            start_square,
+                            Square::C8.as_index(),
+                            Flag::QueensideCastle,
+                        ))
+                    }
+                }
+            }
         }
     }
 
@@ -1512,6 +1568,91 @@ mod tests {
         let move_generator = MoveGenerator::new(board);
 
         assert!(!move_generator.can_kingside_castle());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_kingside_castle_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(E1.as_index());
+
+        assert!(move_generator.generated_move(E1, E2, Flag::None));
+        assert!(move_generator.generated_move(E1, F1, Flag::None));
+        assert!(move_generator.generated_move(E1, G1, Flag::KingsideCastle));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_queenside_castle_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(E1.as_index());
+
+        assert!(move_generator.generated_move(E1, C1, Flag::QueensideCastle));
+        assert!(move_generator.generated_move(E1, D1, Flag::None));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_kingside_castle_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(H2, H3, Flag::None))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(E8.as_index());
+
+        assert!(move_generator.generated_move(E8, G8, Flag::KingsideCastle));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_queenside_castle_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(H2, H3, Flag::None))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        move_generator.generate_king_moves(E8.as_index());
+
+        assert!(move_generator.generated_move(E8, C8, Flag::QueensideCastle));
 
         Ok(())
     }
