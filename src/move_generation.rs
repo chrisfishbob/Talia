@@ -79,6 +79,10 @@ impl MoveGenerator {
     }
 
     pub fn generate_moves(&mut self) -> Vec<Move> {
+        self.generate_pseudo_legal_moves()
+    }
+
+    fn generate_pseudo_legal_moves(&mut self) -> Vec<Move> {
         let moves: Vec<Move> = Vec::new();
 
         for square in 0..64 {
