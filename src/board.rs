@@ -354,6 +354,12 @@ impl Board {
                 self.squares[mv.starting_square] = Some(Piece::Pawn);
                 self.colors[mv.starting_square] = Some(self.to_move);
             }
+            Flag::PromoteTo(_) => {
+                self.squares[mv.starting_square] = Some(Piece::Pawn);
+                self.colors[mv.starting_square] = Some(self.to_move);
+                self.squares[mv.target_square] = None;
+                self.colors[mv.target_square] = None;
+            }
             Flag::CaptureWithPromotion(captured_piece, _) => {
                 self.squares[mv.target_square] = Some(captured_piece);
                 self.colors[mv.target_square] = Some(self.to_move.opposite_color());
@@ -1250,6 +1256,52 @@ mod tests {
             .try_into()?;
 
         board.unmake_move(&Move::from_square(E7, F8, Flag::CaptureWithPromotion(Knight, Queen)))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_pawn_promotion_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::default()
+            .piece(G1, King, White)
+            .piece(E7, Pawn, White)
+            .piece(G8, King, Black)
+            .make_move(Move::from_square(E7, E8, Flag::PromoteTo(Queen)))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::default()
+            .piece(G1, King, White)
+            .piece(E7, Pawn, White)
+            .piece(G8, King, Black)
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E7, E8, Flag::PromoteTo(Queen)))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_pawn_promotion_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::default()
+            .piece(G1, King, White)
+            .piece(E2, Pawn, Black)
+            .piece(G8, King, Black)
+            .to_move(Black)
+            .make_move(Move::from_square(E2, E1, Flag::PromoteTo(Queen)))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::default()
+            .piece(G1, King, White)
+            .piece(E2, Pawn, Black)
+            .piece(G8, King, Black)
+            .to_move(Black)
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E2, E1, Flag::PromoteTo(Queen)))?;
 
         assert!(board == expected_board);
 
