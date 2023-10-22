@@ -61,7 +61,7 @@ pub enum Flag {
 pub struct MoveGenerator {
     num_squares_to_edge: [[usize; 8]; 64],
     direction_offsets: [isize; 8],
-    board: Board,
+    pub board: Board,
 }
 
 impl Default for MoveGenerator {
@@ -80,7 +80,25 @@ impl MoveGenerator {
     }
 
     pub fn generate_moves(&mut self) -> Vec<Move> {
-        self.generate_pseudo_legal_moves()
+        let mut legal_moves = Vec::new();
+        let pseudo_legal_moves = self.generate_pseudo_legal_moves();
+
+        for mv in pseudo_legal_moves {
+            self.board.move_piece(&mv);
+            let opponent_moves = self.generate_pseudo_legal_moves();
+
+            let is_legal = !opponent_moves
+                .iter()
+                .any(|mv| mv.flag == Flag::Capture(Piece::King));
+
+            self.board.unmake_move(&mv).unwrap();
+
+            if is_legal {
+                legal_moves.push(mv);
+            }
+        }
+
+        legal_moves
     }
 
     fn generate_pseudo_legal_moves(&mut self) -> Vec<Move> {
@@ -97,7 +115,9 @@ impl MoveGenerator {
 
             let piece = piece.expect("Piece should not be None if color exists");
             match piece {
-                Piece::Queen | Piece::Rook | Piece::Bishop => self.generate_sliding_moves(&mut moves, square),
+                Piece::Queen | Piece::Rook | Piece::Bishop => {
+                    self.generate_sliding_moves(&mut moves, square)
+                }
                 Piece::Knight => self.generate_knight_moves(&mut moves, square),
                 Piece::Pawn => self.generate_pawn_moves(&mut moves, square),
                 Piece::King => self.generate_king_moves(&mut moves, square),
@@ -137,8 +157,7 @@ impl MoveGenerator {
                     }
                     None => {
                         // No piece on the current square, keep generating moves
-                        moves
-                            .push(Move::new(start_square, target_square, Flag::None));
+                        moves.push(Move::new(start_square, target_square, Flag::None));
                     }
                 }
             }
@@ -162,9 +181,7 @@ impl MoveGenerator {
             }
 
             match self.board.colors[target_square] {
-                None => 
-                    moves
-                    .push(Move::new(start_square, target_square, Flag::None)),
+                None => moves.push(Move::new(start_square, target_square, Flag::None)),
                 Some(color) if color != self.board.to_move => {
                     let captured_piece = self.board.squares[target_square]
                         .expect("piece should not be None if color exists");
@@ -193,8 +210,7 @@ impl MoveGenerator {
             let target_one_up_index = target_one_up_index as usize;
             let is_promotion_move = target_one_up_rank == 0 || target_one_up_rank == 7;
             if !is_promotion_move {
-                moves
-                    .push(Move::new(start_square, target_one_up_index, Flag::None));
+                moves.push(Move::new(start_square, target_one_up_index, Flag::None));
             } else {
                 self.add_promotion_moves(moves, start_square, target_one_up_index, None);
             }
@@ -229,8 +245,7 @@ impl MoveGenerator {
                     let captured_piece = self.board.squares[target_square];
                     self.add_promotion_moves(moves, start_square, target_square, captured_piece);
                 } else if can_capture_en_passant {
-                    moves
-                        .push(Move::new(start_square, target_square, Flag::EnPassantCapture));
+                    moves.push(Move::new(start_square, target_square, Flag::EnPassantCapture));
                 } else {
                     let captured_piece = self.board.squares[target_square]
                         .expect("piece should not be None if color exists");
@@ -281,18 +296,13 @@ impl MoveGenerator {
             }
 
             if self.board.colors[target_square].is_none() {
-                moves
-                    .push(Move::new(start_square, target_square, Flag::None));
+                moves.push(Move::new(start_square, target_square, Flag::None));
             } else if self.board.colors[target_square]
                 .is_some_and(|color| color != self.board.colors[start_square].unwrap())
             {
                 let captured_piece = self.board.squares[target_square]
                     .expect("piece should not be None if color exists");
-                moves.push(Move::new(
-                    start_square,
-                    target_square,
-                    Flag::Capture(captured_piece),
-                ));
+                moves.push(Move::new(start_square, target_square, Flag::Capture(captured_piece)));
             }
 
             // TODO: Refactor this
@@ -382,17 +392,19 @@ impl MoveGenerator {
         num_squares_to_edge
     }
 
-    fn add_promotion_moves(&mut self, moves: &mut Vec<Move>, start: usize, target: usize, captured_piece: Option<Piece>) {
+    fn add_promotion_moves(
+        &mut self,
+        moves: &mut Vec<Move>,
+        start: usize,
+        target: usize,
+        captured_piece: Option<Piece>,
+    ) {
         match captured_piece {
             None => {
-                moves
-                    .push(Move::new(start, target, Flag::PromoteTo(Piece::Queen)));
-                moves
-                    .push(Move::new(start, target, Flag::PromoteTo(Piece::Rook)));
-                moves
-                    .push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
-                moves
-                    .push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
+                moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Queen)));
+                moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Rook)));
+                moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Bishop)));
+                moves.push(Move::new(start, target, Flag::PromoteTo(Piece::Knight)));
             }
             Some(piece) => {
                 moves.push(Move::new(
@@ -444,6 +456,24 @@ impl MoveGenerator {
                     && self.board.squares[Square::G8.as_index()].is_none()
             }
         }
+    }
+
+    #[cfg(test)]
+    fn perft_test(&mut self, depth: u32) -> u32 {
+        if depth == 0 {
+            return 1;
+        }
+
+        let moves = self.generate_moves();
+        let mut num = 0;
+
+        for mv in moves.iter() {
+            self.board.move_piece(mv);
+            num += self.perft_test(depth - 1);
+            self.board.unmake_move(mv).unwrap();
+        }
+
+        num
     }
 }
 
@@ -617,7 +647,7 @@ mod tests {
     fn test_generate_sliding_moves_from_corner() -> Result<(), BoardError> {
         let board = BoardBuilder::try_from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1")?;
         let mut move_generator = MoveGenerator::new(board);
-        let mut moves = Vec::new();        
+        let mut moves = Vec::new();
 
         move_generator.generate_sliding_moves(&mut moves, A8.as_index());
 
@@ -1149,10 +1179,26 @@ mod tests {
         move_generator.generate_pawn_moves(&mut moves, E7.as_index());
 
         assert_eq!(moves.len(), 4);
-        assert!(moves.contains(&Move::from_square(E7, D8, Flag::CaptureWithPromotion(Queen, Queen))));
-        assert!(moves.contains(&Move::from_square(E7, D8, Flag::CaptureWithPromotion(Queen, Rook))));
-        assert!(moves.contains(&Move::from_square(E7, D8, Flag::CaptureWithPromotion(Queen, Bishop))));
-        assert!(moves.contains(&Move::from_square(E7, D8, Flag::CaptureWithPromotion(Queen, Knight))));
+        assert!(moves.contains(&Move::from_square(
+            E7,
+            D8,
+            Flag::CaptureWithPromotion(Queen, Queen)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E7,
+            D8,
+            Flag::CaptureWithPromotion(Queen, Rook)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E7,
+            D8,
+            Flag::CaptureWithPromotion(Queen, Bishop)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E7,
+            D8,
+            Flag::CaptureWithPromotion(Queen, Knight)
+        )));
 
         Ok(())
     }
@@ -1173,10 +1219,26 @@ mod tests {
         move_generator.generate_pawn_moves(&mut moves, E2.as_index());
 
         assert_eq!(moves.len(), 4);
-        assert!(moves.contains(&Move::from_square(E2, D1, Flag::CaptureWithPromotion(Queen, Queen))));
-        assert!(moves.contains(&Move::from_square(E2, D1, Flag::CaptureWithPromotion(Queen, Rook))));
-        assert!(moves.contains(&Move::from_square(E2, D1, Flag::CaptureWithPromotion(Queen, Bishop))));
-        assert!(moves.contains(&Move::from_square(E2, D1, Flag::CaptureWithPromotion(Queen, Knight))));
+        assert!(moves.contains(&Move::from_square(
+            E2,
+            D1,
+            Flag::CaptureWithPromotion(Queen, Queen)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E2,
+            D1,
+            Flag::CaptureWithPromotion(Queen, Rook)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E2,
+            D1,
+            Flag::CaptureWithPromotion(Queen, Bishop)
+        )));
+        assert!(moves.contains(&Move::from_square(
+            E2,
+            D1,
+            Flag::CaptureWithPromotion(Queen, Knight)
+        )));
 
         Ok(())
     }
@@ -1775,6 +1837,106 @@ mod tests {
         move_generator.generate_king_moves(&mut moves, E8.as_index());
 
         assert!(moves.contains(&Move::from_square(E8, C8, Flag::QueensideCastle)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn perf_test_from_starting_position() -> Result<(), BoardError> {
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_moves_starting_position_white() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position().try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        let moves = move_generator.generate_moves();
+
+        assert!(moves.len() == 20);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_generate_moves_starting_position_black() -> Result<(), BoardError> {
+        let board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        let moves = move_generator.generate_moves();
+
+        assert!(moves.len() == 20);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_1() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(1);
+
+        assert!(number_of_positions == 20);
+        // let expected_number_of_positions = [1, 20, 400, 8092, 197281];
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_2() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(2);
+
+        assert!(number_of_positions == 400);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_3() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(3);
+
+        assert!(number_of_positions == 8902);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_4() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(4);
+
+        assert!(number_of_positions == 197281);
+
+        Ok(())
+    }
+
+    #[ignore] // Too expensive. Run with cargo test -- --ignored
+    #[test]
+    fn test_move_generation_depth_5() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(5);
+
+        assert!(number_of_positions == 4865609);
+
+        Ok(())
+    }
+
+    #[ignore] // Too expensive. Run with cargo test -- --ignored
+    #[test]
+    fn test_move_generation_depth_6() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(6);
+
+        assert!(number_of_positions == 119060324);
 
         Ok(())
     }
