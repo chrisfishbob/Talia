@@ -1,4 +1,4 @@
-use crate::board::Board;
+use crate::board::{Board, BoardState};
 use crate::errors::BoardError;
 use crate::move_generation::Move;
 use crate::piece::{Color, Piece};
@@ -27,7 +27,7 @@ impl BoardBuilder {
     }
 
     pub fn make_move(mut self, mv: Move) -> Self {
-        self.board.move_piece(mv);
+        self.board.move_piece(&mv);
         self
     }
 
@@ -43,29 +43,29 @@ impl BoardBuilder {
 
     pub fn can_kingside_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.white_kingside_castling_priviledge = castle;
+            self.board.board_state.white_kingside_castling_priviledge = castle;
         } else {
-            self.board.black_kingside_castling_priviledge = castle;
+            self.board.board_state.black_kingside_castling_priviledge = castle;
         }
         self
     }
 
     pub fn can_queenside_castle(mut self, color: Color, castle: bool) -> Self {
         if color == Color::White {
-            self.board.white_queenside_castling_priviledge = castle;
+            self.board.board_state.white_queenside_castling_priviledge = castle;
         } else {
-            self.board.black_queenside_castling_priviledge = castle;
+            self.board.board_state.black_queenside_castling_priviledge = castle;
         }
         self
     }
 
     pub fn en_passant_square(mut self, square: Option<usize>) -> Self {
-        self.board.en_passant_square = square;
+        self.board.board_state.en_passant_square = square;
         self
     }
 
     pub fn half_move_clock(mut self, number: u32) -> Self {
-        self.board.half_move_clock = number;
+        self.board.board_state.half_move_clock = number;
         self
     }
 
@@ -152,13 +152,17 @@ impl BoardBuilder {
             squares,
             colors,
             to_move,
-            en_passant_square: Self::parse_en_passant_square(fen_string_fields[3])?,
-            white_kingside_castling_priviledge: castling_rights.contains(&'K'),
-            black_kingside_castling_priviledge: castling_rights.contains(&'k'),
-            white_queenside_castling_priviledge: castling_rights.contains(&'Q'),
-            black_queenside_castling_priviledge: castling_rights.contains(&'q'),
-            half_move_clock,
             full_move_number,
+            board_state: BoardState {
+                captured_piece: None,
+                en_passant_square: Self::parse_en_passant_square(fen_string_fields[3])?,
+                white_kingside_castling_priviledge: castling_rights.contains(&'K'),
+                black_kingside_castling_priviledge: castling_rights.contains(&'k'),
+                white_queenside_castling_priviledge: castling_rights.contains(&'Q'),
+                black_queenside_castling_priviledge: castling_rights.contains(&'q'),
+                half_move_clock,
+            },
+            board_state_history: Vec::new()
         })
     }
 
