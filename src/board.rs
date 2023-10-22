@@ -360,6 +360,30 @@ impl Board {
                 self.squares[mv.target_square] = None;
                 self.colors[mv.target_square] = None;
             }
+            Flag::KingsideCastle => match self.to_move {
+                Color::White => {
+                    dbg!("Here");
+                    self.squares[Square::H1.as_index()] = Some(Piece::Rook);
+                    self.colors[Square::H1.as_index()] = Some(Color::White);
+                    self.squares[Square::E1.as_index()] = Some(Piece::King);
+                    self.colors[Square::E1.as_index()] = Some(Color::White);
+                    self.squares[Square::F1.as_index()] = None;
+                    self.colors[Square::F1.as_index()] = None;
+                    self.squares[Square::G1.as_index()] = None;
+                    self.colors[Square::G1.as_index()] = None;
+
+                }
+                Color::Black => {
+                    self.squares[Square::H8.as_index()] = Some(Piece::Rook);
+                    self.colors[Square::H8.as_index()] = Some(Color::Black);
+                    self.squares[Square::E8.as_index()] = Some(Piece::King);
+                    self.colors[Square::E8.as_index()] = Some(Color::Black);
+                    self.squares[Square::F8.as_index()] = None;
+                    self.colors[Square::F8.as_index()] = None;
+                    self.squares[Square::G8.as_index()] = None;
+                    self.colors[Square::G8.as_index()] = None;
+                }
+            },
             Flag::CaptureWithPromotion(captured_piece, _) => {
                 self.squares[mv.target_square] = Some(captured_piece);
                 self.colors[mv.target_square] = Some(self.to_move.opposite_color());
@@ -1328,6 +1352,64 @@ mod tests {
             .try_into()?;
 
         board.unmake_move(&Move::from_square(E2, C1, Flag::CaptureWithPromotion(Knight, Queen)))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_kingside_castle_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(E1, G1, Flag::KingsideCastle))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E1, G1, Flag::KingsideCastle))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_kingside_castle_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(E1, G1, Flag::KingsideCastle))
+            .make_move(Move::from_square(E8, G8, Flag::KingsideCastle))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(E1, G1, Flag::KingsideCastle))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E8, G8, Flag::KingsideCastle))?;
 
         assert!(board == expected_board);
 
