@@ -362,7 +362,6 @@ impl Board {
             }
             Flag::KingsideCastle => match self.to_move {
                 Color::White => {
-                    dbg!("Here");
                     self.squares[Square::H1.as_index()] = Some(Piece::Rook);
                     self.colors[Square::H1.as_index()] = Some(Color::White);
                     self.squares[Square::E1.as_index()] = Some(Piece::King);
@@ -382,6 +381,29 @@ impl Board {
                     self.colors[Square::F8.as_index()] = None;
                     self.squares[Square::G8.as_index()] = None;
                     self.colors[Square::G8.as_index()] = None;
+                }
+            },
+            Flag::QueensideCastle => match self.to_move {
+                Color::White => {
+                    self.squares[Square::A1.as_index()] = Some(Piece::Rook);
+                    self.colors[Square::A1.as_index()] = Some(Color::White);
+                    self.squares[Square::E1.as_index()] = Some(Piece::King);
+                    self.colors[Square::E1.as_index()] = Some(Color::White);
+                    self.squares[Square::C1.as_index()] = None;
+                    self.colors[Square::C1.as_index()] = None;
+                    self.squares[Square::D1.as_index()] = None;
+                    self.colors[Square::D1.as_index()] = None;
+
+                }
+                Color::Black => {
+                    self.squares[Square::A8.as_index()] = Some(Piece::Rook);
+                    self.colors[Square::A8.as_index()] = Some(Color::Black);
+                    self.squares[Square::E8.as_index()] = Some(Piece::King);
+                    self.colors[Square::E8.as_index()] = Some(Color::Black);
+                    self.squares[Square::C8.as_index()] = None;
+                    self.colors[Square::C8.as_index()] = None;
+                    self.squares[Square::D8.as_index()] = None;
+                    self.colors[Square::D8.as_index()] = None;
                 }
             },
             Flag::CaptureWithPromotion(captured_piece, _) => {
@@ -1410,6 +1432,72 @@ mod tests {
             .try_into()?;
 
         board.unmake_move(&Move::from_square(E8, G8, Flag::KingsideCastle))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_queenside_castling_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
+            .try_into()?;
+        
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E1, C1, Flag::QueensideCastle))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_queenside_castling_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
+            .make_move(Move::from_square(E8, C8, Flag::QueensideCastle))
+            .try_into()?;
+        
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(B1, C3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(C1, F4, Flag::None))
+            .make_move(Move::from_square(C8, F5, Flag::None))
+            .make_move(Move::from_square(D1, D2, Flag::None))
+            .make_move(Move::from_square(D8, D7, Flag::None))
+            .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E8, C8, Flag::QueensideCastle))?;
 
         assert!(board == expected_board);
 
