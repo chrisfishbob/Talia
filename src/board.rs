@@ -327,6 +327,8 @@ impl Board {
             .pop()
             .ok_or(BoardError::new("Already at oldest move"))?;
 
+        self.to_move = self.to_move.opposite_color();
+
         let error_message = "Tried to unmake move, but could not find piece";
         let piece = self.squares[mv.target_square].ok_or(BoardError::new(error_message))?;
         let color = self.colors[mv.target_square].ok_or(BoardError::new(error_message))?;
@@ -335,7 +337,19 @@ impl Board {
         match mv.flag {
             Flag::Capture(piece) => {
                 self.squares[mv.target_square] = Some(piece);
-                self.colors[mv.target_square] = Some(self.to_move);
+                self.colors[mv.target_square] = Some(self.to_move.opposite_color());
+            }
+            Flag::EnPassantCapture => {
+                let captured_pawn_index = if self.to_move == Color::White {
+                    mv.target_square - 8
+                } else {
+                    mv.target_square + 8
+                };
+
+                self.squares[captured_pawn_index] = Some(Piece::Pawn);
+                self.colors[captured_pawn_index] = Some(self.to_move.opposite_color());
+                self.squares[mv.target_square] = None;
+                self.colors[mv.target_square] = None;
             }
             _ => {
                 self.squares[mv.target_square] = None;
@@ -343,11 +357,9 @@ impl Board {
             }
         }
 
-        if self.to_move == Color::White {
+        if self.to_move == Color::Black {
             self.full_move_number -= 1;
         }
-
-        self.toggle_to_move_color();
 
         Ok(())
     }
@@ -454,14 +466,6 @@ impl Board {
         } else {
             self.to_move = Color::White;
             self.full_move_number += 1;
-        }
-    }
-
-    fn toggle_to_move_color(&mut self) {
-        if self.to_move == Color::White {
-            self.to_move = Color::Black;
-        } else {
-            self.to_move = Color::White;
         }
     }
 }
@@ -1115,8 +1119,6 @@ mod tests {
             .try_into()?;
 
         board.unmake_move(&Move::from_square(E7, E5, Flag::PawnDoublePush))?;
-        dbg!(&board);
-        dbg!(&expected_board);
 
         assert!(board == expected_board);
 
@@ -1167,6 +1169,56 @@ mod tests {
             .try_into()?;
 
         board.unmake_move(&Move::from_square(C6, E5, Flag::Capture(Knight)))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_en_passant_capture_white() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(E4, E5, Flag::None))
+            .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E5, D6, Flag::EnPassantCapture))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(E4, E5, Flag::None))
+            .make_move(Move::from_square(D7, D5, Flag::PawnDoublePush))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E5, D6, Flag::EnPassantCapture))?;
+
+        assert!(board == expected_board);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_unmake_en_passant_capture_black() -> Result<(), BoardError> {
+        let mut board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(H1, H2, Flag::None))
+            .make_move(Move::from_square(E5, E4, Flag::None))
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E4, D3, Flag::EnPassantCapture))
+            .try_into()?;
+
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(H1, H2, Flag::None))
+            .make_move(Move::from_square(E5, E4, Flag::None))
+            .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        board.unmake_move(&Move::from_square(E4, D3, Flag::EnPassantCapture))?;
 
         assert!(board == expected_board);
 

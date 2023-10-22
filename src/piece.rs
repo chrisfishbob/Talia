@@ -47,3 +47,12 @@ impl fmt::Debug for Color {
         }
     }
 }
+
+impl Color {
+    pub fn opposite_color(&self) -> Self {
+        match self {
+            Self::White => Self::Black,
+            Self::Black => Self::White,
+        }
+    }
+}
