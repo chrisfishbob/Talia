@@ -37,11 +37,10 @@ impl fmt::Debug for Move {
             Square::from_index(self.starting_square),
             Square::from_index(self.target_square),
         )?;
-        if let Flag::PromoteTo(piece) = self.flag {
-            write!(f, ", promotion_piece: {:?}", piece)
-        } else {
-            Ok(())
+        if self.flag != Flag::None {
+            write!(f, ", {:?}", self.flag)?;
         }
+        Ok(())
     }
 }
 
@@ -84,16 +83,20 @@ impl MoveGenerator {
         let pseudo_legal_moves = self.generate_pseudo_legal_moves();
 
         for mv in pseudo_legal_moves {
-            self.board.move_piece(&mv);
-            let opponent_moves = self.generate_pseudo_legal_moves();
+            // If castling path is not clear, can't castle
+            if (mv.flag == Flag::KingsideCastle || mv.flag == Flag::QueensideCastle)
+                && !self.is_castling_path_clear(&mv)
+            {
+                continue;
+            }
 
-            let is_legal = !opponent_moves
-                .iter()
-                .any(|mv| mv.flag == Flag::Capture(Piece::King));
+            self.board.move_piece(&mv);
+
+            let in_check_after_move = self.is_in_check();
 
             self.board.unmake_move(&mv).unwrap();
 
-            if is_legal {
+            if !in_check_after_move {
                 legal_moves.push(mv);
             }
         }
@@ -304,62 +307,64 @@ impl MoveGenerator {
                     .expect("piece should not be None if color exists");
                 moves.push(Move::new(start_square, target_square, Flag::Capture(captured_piece)));
             }
+        }
 
-            // TODO: Refactor this
-            match self.board.to_move {
-                Color::White => {
-                    let kingside_castling_path_clear = self.board.squares[Square::F1.as_index()]
-                        .is_none()
-                        && self.board.squares[Square::G1.as_index()].is_none();
-                    if self.board.board_state.white_kingside_castling_priviledge
-                        && kingside_castling_path_clear
-                    {
-                        moves.push(Move::new(
-                            start_square,
-                            Square::G1.as_index(),
-                            Flag::KingsideCastle,
-                        ));
-                    }
-
-                    let queenside_castling_path_clear = self.board.squares[Square::D1.as_index()]
-                        .is_none()
-                        && self.board.squares[Square::C1.as_index()].is_none();
-                    if self.board.board_state.white_queenside_castling_priviledge
-                        && queenside_castling_path_clear
-                    {
-                        moves.push(Move::new(
-                            start_square,
-                            Square::C1.as_index(),
-                            Flag::QueensideCastle,
-                        ))
-                    }
+        // TODO: Refactor this
+        match self.board.to_move {
+            Color::White => {
+                let kingside_castling_path_clear = self.board.squares[Square::F1.as_index()]
+                    .is_none()
+                    && self.board.squares[Square::G1.as_index()].is_none();
+                if self.board.board_state.white_kingside_castling_priviledge
+                    && kingside_castling_path_clear
+                {
+                    moves.push(Move::new(
+                        start_square,
+                        Square::G1.as_index(),
+                        Flag::KingsideCastle,
+                    ));
                 }
-                Color::Black => {
-                    let kingside_castling_path_clear = self.board.squares[Square::F8.as_index()]
-                        .is_none()
-                        && self.board.squares[Square::G8.as_index()].is_none();
-                    if self.board.board_state.white_kingside_castling_priviledge
-                        && kingside_castling_path_clear
-                    {
-                        moves.push(Move::new(
-                            start_square,
-                            Square::G8.as_index(),
-                            Flag::KingsideCastle,
-                        ));
-                    }
 
-                    let queenside_castling_path_clear = self.board.squares[Square::D8.as_index()]
-                        .is_none()
-                        && self.board.squares[Square::C8.as_index()].is_none();
-                    if self.board.board_state.white_queenside_castling_priviledge
-                        && queenside_castling_path_clear
-                    {
-                        moves.push(Move::new(
-                            start_square,
-                            Square::C8.as_index(),
-                            Flag::QueensideCastle,
-                        ))
-                    }
+                let queenside_castling_path_clear = self.board.squares[Square::D1.as_index()]
+                    .is_none()
+                    && self.board.squares[Square::C1.as_index()].is_none()
+                    && self.board.squares[Square::B1.as_index()].is_none();
+                if self.board.board_state.white_queenside_castling_priviledge
+                    && queenside_castling_path_clear
+                {
+                    moves.push(Move::new(
+                        start_square,
+                        Square::C1.as_index(),
+                        Flag::QueensideCastle,
+                    ))
+                }
+            }
+            Color::Black => {
+                let kingside_castling_path_clear = self.board.squares[Square::F8.as_index()]
+                    .is_none()
+                    && self.board.squares[Square::G8.as_index()].is_none();
+                if self.board.board_state.black_kingside_castling_priviledge
+                    && kingside_castling_path_clear
+                {
+                    moves.push(Move::new(
+                        start_square,
+                        Square::G8.as_index(),
+                        Flag::KingsideCastle,
+                    ));
+                }
+
+                let queenside_castling_path_clear = self.board.squares[Square::D8.as_index()]
+                    .is_none()
+                    && self.board.squares[Square::C8.as_index()].is_none()
+                    && self.board.squares[Square::B8.as_index()].is_none();
+                if self.board.board_state.black_queenside_castling_priviledge
+                    && queenside_castling_path_clear
+                {
+                    moves.push(Move::new(
+                        start_square,
+                        Square::C8.as_index(),
+                        Flag::QueensideCastle,
+                    ))
                 }
             }
         }
@@ -442,6 +447,107 @@ impl MoveGenerator {
         (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2
     }
 
+    fn is_in_check(&mut self) -> bool {
+        let opponent_moves = self.generate_pseudo_legal_moves();
+        opponent_moves.iter().any(|mv| {
+            mv.flag == Flag::Capture(Piece::King)
+                || matches!(mv.flag, Flag::CaptureWithPromotion(Piece::King, _))
+        })
+    }
+
+    fn calculate_opponent_attack_map(&mut self) -> [bool; 64] {
+        let mut attack_map = [false; 64];
+        let mut moves = Vec::new();
+        let original_to_move = self.board.to_move;
+        self.board.to_move = self.board.to_move.opposite_color();
+
+        for square in 0..64 {
+            if !self.board.colors[square].is_some_and(|color| color == self.board.to_move) {
+                continue;
+            }
+
+            match self.board.squares[square].unwrap() {
+                Piece::Pawn => {
+                    let pawn_move_offsets = match self.board.to_move {
+                        Color::White => [8, 16, 7, 9],
+                        Color::Black => [-8, -16, -7, -9],
+                    };
+
+                    for capture_offset in &pawn_move_offsets[2..] {
+                        let target_square = {
+                            let tmp = square as isize + capture_offset;
+                            if !(0..64).contains(&tmp) {
+                                continue;
+                            }
+                            tmp as usize
+                        };
+
+                        if Self::is_pacman_move(square, target_square) {
+                            continue;
+                        }
+
+                        attack_map[target_square] = true;
+                    }
+                }
+                Piece::Queen | Piece::Bishop | Piece::Rook => {
+                    self.generate_sliding_moves(&mut moves, square);
+                }
+                Piece::Knight => {
+                    self.generate_knight_moves(&mut moves, square);
+                }
+                Piece::King => {
+                    self.generate_king_moves(&mut moves, square);
+                }
+            }
+        }
+
+        for mv in moves {
+            attack_map[mv.target_square] = true;
+        }
+
+        self.board.to_move = original_to_move;
+        attack_map
+    }
+
+    fn is_castling_path_clear(&mut self, mv: &Move) -> bool {
+        // TODO: Fix this outright war crime
+        if mv.flag == Flag::KingsideCastle {
+            let attacked_map = self.calculate_opponent_attack_map();
+
+            if self.board.to_move == Color::White {
+                if attacked_map[Square::E1.as_index()]
+                    || attacked_map[Square::F1.as_index()]
+                    || attacked_map[Square::G1.as_index()]
+                {
+                    return false;
+                }
+            } else if attacked_map[Square::E8.as_index()]
+                || attacked_map[Square::F8.as_index()]
+                || attacked_map[Square::G8.as_index()]
+            {
+                return false;
+            }
+        } else if mv.flag == Flag::QueensideCastle {
+            let attacked_squares = self.calculate_opponent_attack_map();
+
+            if self.board.to_move == Color::White {
+                if attacked_squares[Square::E1.as_index()]
+                    || attacked_squares[Square::D1.as_index()]
+                    || attacked_squares[Square::C1.as_index()]
+                {
+                    return false;
+                }
+            } else if attacked_squares[Square::E8.as_index()]
+                || attacked_squares[Square::D8.as_index()]
+                || attacked_squares[Square::C8.as_index()]
+            {
+                return false;
+            }
+        }
+
+        true
+    }
+
     #[allow(unused)]
     fn can_kingside_castle(&self) -> bool {
         match self.board.to_move {
@@ -485,6 +591,251 @@ mod tests {
     use crate::move_generation::{Flag, Move, MoveGenerator};
     use crate::piece::{Color::*, Piece::*};
     use crate::square::Square::*;
+
+    #[test]
+    fn test_move_generation_depth_1() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(1);
+
+        assert!(number_of_positions == 20);
+        // let expected_number_of_positions = [1, 20, 400, 8092, 197281];
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_2() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(2);
+
+        assert!(number_of_positions == 400);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_3() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(3);
+
+        assert!(number_of_positions == 8902);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_depth_4() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(4);
+
+        assert!(number_of_positions == 197281);
+
+        Ok(())
+    }
+
+    #[ignore] // Too expensive. Run with cargo test -- --ignored
+    #[test]
+    fn test_move_generation_depth_5() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(5);
+
+        assert!(number_of_positions == 4865609);
+
+        Ok(())
+    }
+
+    #[ignore] // Too expensive. Run with cargo test -- --ignored
+    #[test]
+    fn test_move_generation_depth_6() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position().try_into()?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(6);
+
+        assert!(number_of_positions == 119060324);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_kiwipete_depth_1() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(1);
+
+        assert!(number_of_positions == 48);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_kiwipete_depth_2() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(2);
+
+        assert!(number_of_positions == 2039);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_kiwipete_depth_3() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(3);
+
+        assert!(number_of_positions == 97862);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_kiwipete_depth_4() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(4);
+
+        assert!(number_of_positions == 4085603);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_tricky_position_depth_1() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(1);
+
+        assert!(number_of_positions == 44);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_tricky_position_depth_2() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(2);
+
+        assert!(number_of_positions == 1486);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_tricky_position_depth_3() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(3);
+
+        assert!(number_of_positions == 62379);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_tricky_position_depth_4() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(4);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 2103487);
+
+        Ok(())
+    }
+
+    #[ignore] // Too expensive. Run with cargo test -- --ignored
+    #[test]
+    fn test_move_generation_tricky_position_depth_5() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(5);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 89941194);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_edwards_perft_depth_1() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(1);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 46);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_edwards_perft_depth_2() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(2);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 2079);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_edwards_perft_depth_3() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(3);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 89890);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_generation_edwards_perft_depth_4() -> Result<(), BoardError> {
+        let board = BoardBuilder::try_from_fen(
+            "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
+        )?;
+        let mut move_generator = MoveGenerator::new(board);
+        let number_of_positions = move_generator.perft_test(4);
+
+        dbg!(number_of_positions);
+        assert!(number_of_positions == 3894594);
+
+        Ok(())
+    }
 
     #[test]
     fn test_num_squares_to_edge() {
@@ -1767,6 +2118,7 @@ mod tests {
         let mut moves = Vec::new();
         move_generator.generate_king_moves(&mut moves, E1.as_index());
 
+        assert!(moves.len() == 3);
         assert!(moves.contains(&Move::from_square(E1, E2, Flag::None)));
         assert!(moves.contains(&Move::from_square(E1, F1, Flag::None)));
         assert!(moves.contains(&Move::from_square(E1, G1, Flag::KingsideCastle)));
@@ -1791,6 +2143,7 @@ mod tests {
         let mut moves = Vec::new();
         move_generator.generate_king_moves(&mut moves, E1.as_index());
 
+        assert!(moves.len() == 2);
         assert!(moves.contains(&Move::from_square(E1, C1, Flag::QueensideCastle)));
         assert!(moves.contains(&Move::from_square(E1, D1, Flag::None)));
 
@@ -1809,10 +2162,14 @@ mod tests {
             .make_move(Move::from_square(H2, H3, Flag::None))
             .try_into()?;
 
+        dbg!(&board);
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = Vec::new();
         move_generator.generate_king_moves(&mut moves, E8.as_index());
 
+        assert!(moves.len() == 3);
+        assert!(moves.contains(&Move::from_square(E8, E7, Flag::None)));
+        assert!(moves.contains(&Move::from_square(E8, F8, Flag::None)));
         assert!(moves.contains(&Move::from_square(E8, G8, Flag::KingsideCastle)));
 
         Ok(())
@@ -1832,17 +2189,15 @@ mod tests {
             .make_move(Move::from_square(H2, H3, Flag::None))
             .try_into()?;
 
+        dbg!(&board);
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = Vec::new();
         move_generator.generate_king_moves(&mut moves, E8.as_index());
 
+        assert!(moves.len() == 2);
+        assert!(moves.contains(&Move::from_square(E8, D8, Flag::None)));
         assert!(moves.contains(&Move::from_square(E8, C8, Flag::QueensideCastle)));
 
-        Ok(())
-    }
-
-    #[test]
-    fn perf_test_from_starting_position() -> Result<(), BoardError> {
         Ok(())
     }
 
@@ -1873,70 +2228,146 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_depth_1() -> Result<(), BoardError> {
+    fn test_calculate_opponent_attack_squares_from_white() -> Result<(), BoardError> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(1);
+        let attacked_squares = move_generator.calculate_opponent_attack_map();
 
-        assert!(number_of_positions == 20);
-        // let expected_number_of_positions = [1, 20, 400, 8092, 197281];
+        let squares_attacked = attacked_squares
+            .iter()
+            .filter(|&&attacked| attacked)
+            .count();
+
+        assert!(squares_attacked == 8);
+        Ok(())
+    }
+
+    #[test]
+    fn test_calculate_opponent_attack_squares_from_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        let attacked_squares = move_generator.calculate_opponent_attack_map();
+
+        let squares_attacked = attacked_squares
+            .iter()
+            .filter(|&&attacked| attacked)
+            .count();
+
+        assert!(squares_attacked == 16);
+        Ok(())
+    }
+
+    #[test]
+    fn test_is_kingside_castling_path_clear_true_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(B8, C6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(G8, C5, Flag::None))
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        assert!(move_generator.is_castling_path_clear(&Move::from_square(
+            E1,
+            G1,
+            Flag::KingsideCastle
+        )));
 
         Ok(())
     }
 
     #[test]
-    fn test_move_generation_depth_2() -> Result<(), BoardError> {
-        let board = BoardBuilder::from_starting_position().try_into()?;
-        let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(2);
+    fn test_is_kingside_castling_path_clear_true_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(H2, H3, Flag::None))
+            .try_into()?;
 
-        assert!(number_of_positions == 400);
+        let mut move_generator = MoveGenerator::new(board);
+        assert!(move_generator.is_castling_path_clear(&Move::from_square(
+            E8,
+            G8,
+            Flag::KingsideCastle
+        )));
 
         Ok(())
     }
 
     #[test]
-    fn test_move_generation_depth_3() -> Result<(), BoardError> {
-        let board = BoardBuilder::from_starting_position().try_into()?;
-        let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(3);
+    fn test_is_kingside_castling_path_clear_f1_attacked_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(F6, H5, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(H5, G3, Flag::None))
+            .try_into()?;
 
-        assert!(number_of_positions == 8902);
+        let mut move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.is_castling_path_clear(&Move::from_square(
+            E1,
+            G1,
+            Flag::KingsideCastle
+        )));
 
         Ok(())
     }
 
     #[test]
-    fn test_move_generation_depth_4() -> Result<(), BoardError> {
-        let board = BoardBuilder::from_starting_position().try_into()?;
-        let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(4);
+    fn test_is_kingside_castling_path_clear_f8_attacked_black() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
+            .make_move(Move::from_square(F3, G5, Flag::None))
+            .make_move(Move::from_square(F8, C5, Flag::None))
+            .make_move(Move::from_square(G5, H7, Flag::None))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(A2, A3, Flag::None))
+            .try_into()?;
 
-        assert!(number_of_positions == 197281);
+        let mut move_generator = MoveGenerator::new(board);
+
+        assert!(!move_generator.is_castling_path_clear(&Move::from_square(
+            E8,
+            G8,
+            Flag::KingsideCastle
+        )));
 
         Ok(())
     }
 
-    #[ignore] // Too expensive. Run with cargo test -- --ignored
     #[test]
-    fn test_move_generation_depth_5() -> Result<(), BoardError> {
-        let board = BoardBuilder::from_starting_position().try_into()?;
+    fn test_is_kingside_castling_path_clear_king_in_check_white() -> Result<(), BoardError> {
+        let board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(G8, F6, Flag::None))
+            .make_move(Move::from_square(G1, F3, Flag::None))
+            .make_move(Move::from_square(F6, D5, Flag::None))
+            .make_move(Move::from_square(F1, C4, Flag::None))
+            .make_move(Move::from_square(D5, B4, Flag::None))
+            .make_move(Move::from_square(H2, H3, Flag::None))
+            .make_move(Move::from_square(B4, C2, Flag::None))
+            .try_into()?;
+
         let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(5);
 
-        assert!(number_of_positions == 4865609);
-
-        Ok(())
-    }
-
-    #[ignore] // Too expensive. Run with cargo test -- --ignored
-    #[test]
-    fn test_move_generation_depth_6() -> Result<(), BoardError> {
-        let board = BoardBuilder::from_starting_position().try_into()?;
-        let mut move_generator = MoveGenerator::new(board);
-        let number_of_positions = move_generator.perft_test(6);
-
-        assert!(number_of_positions == 119060324);
+        assert!(!move_generator.is_castling_path_clear(&Move::from_square(
+            E1,
+            G1,
+            Flag::KingsideCastle
+        )));
 
         Ok(())
     }

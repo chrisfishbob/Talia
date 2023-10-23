@@ -304,10 +304,11 @@ impl Board {
             }
         }
 
-        if let Flag::PromoteTo(piece) = mv.flag {
-            self.squares[mv.target_square] = Some(piece);
-        } else {
-            self.squares[mv.target_square] = self.squares[mv.starting_square];
+        match mv.flag {
+            Flag::PromoteTo(piece) | Flag::CaptureWithPromotion(_, piece) => {
+                self.squares[mv.target_square] = Some(piece);
+            },
+            _ => self.squares[mv.target_square] = self.squares[mv.starting_square]
         }
         self.colors[mv.target_square] = self.colors[mv.starting_square];
         self.squares[mv.starting_square] = None;
@@ -409,6 +410,8 @@ impl Board {
             Flag::CaptureWithPromotion(captured_piece, _) => {
                 self.squares[mv.target_square] = Some(captured_piece);
                 self.colors[mv.target_square] = Some(self.to_move.opposite_color());
+                self.squares[mv.starting_square] = Some(Piece::Pawn);
+                self.colors[mv.starting_square] = Some(self.to_move);
             }
             _ => {
                 self.squares[mv.target_square] = None;
