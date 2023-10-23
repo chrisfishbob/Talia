@@ -4,6 +4,8 @@
 Talia is a UCI-compliant, thoroughly tested chess engine written from the ground up in Rust.
 
 ### Progress
+
+#### Legal Move Complete
 ✅ Piece representation  
 ✅ Board representation  
 ✅ Converting a FEN string to the internal board representation  
@@ -18,3 +20,5 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 ✅ Pawn captures moves generation  
 ✅ Pawn en passant captures moves generation  
 ✅ King single moves generation   
+✅ Kingside castling move generation  
+✅ Queenside castling move generation  
