@@ -480,11 +480,7 @@ impl MoveGenerator {
                             tmp as usize
                         };
 
-                        if Self::is_pacman_move(square, target_square) {
-                            continue;
-                        }
-
-                        if target_square == king_square {
+                        if !Self::is_pacman_move(square, target_square) && target_square == king_square {
                             return true;
                         }
                     }
