@@ -665,12 +665,18 @@ impl MoveGenerator {
             return 1;
         }
 
-        let moves = self.generate_moves();
         let mut num = 0;
+        let moves = self.generate_moves();
+
+        if depth == 1 {
+            return moves.len() as u32;
+        }
 
         for mv in moves.iter() {
             self.board.move_piece(mv);
-            num += self.perft_test(depth - 1);
+            if !self.is_in_check(self.board.to_move.opposite_color()) {
+                num += self.perft_test(depth - 1);
+            }
             self.board.unmake_move(mv).unwrap();
         }
 
