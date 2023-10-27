@@ -81,6 +81,7 @@ impl MoveGenerator {
     pub fn generate_moves(&mut self) -> Vec<Move> {
         let mut legal_moves = Vec::new();
         let pseudo_legal_moves = self.generate_pseudo_legal_moves();
+        let to_move = self.board.to_move;
 
         for mv in pseudo_legal_moves {
             // If castling path is not clear, can't castle
@@ -92,7 +93,7 @@ impl MoveGenerator {
 
             self.board.move_piece(&mv);
 
-            let in_check_after_move = self.is_in_check();
+            let in_check_after_move = self.is_in_check(to_move);
 
             self.board.unmake_move(&mv).unwrap();
 
@@ -447,12 +448,110 @@ impl MoveGenerator {
         (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2
     }
 
-    fn is_in_check(&mut self) -> bool {
-        let opponent_moves = self.generate_pseudo_legal_moves();
-        opponent_moves.iter().any(|mv| {
-            mv.flag == Flag::Capture(Piece::King)
-                || matches!(mv.flag, Flag::CaptureWithPromotion(Piece::King, _))
-        })
+    fn is_in_check(&mut self, color_to_check: Color) -> bool {
+        let king_square = (0..64)
+            .find(|&square| {
+                self.board.colors[square].is_some()
+                    && self.board.squares[square].is_some()
+                    && self.board.colors[square].unwrap() == color_to_check
+                    && self.board.squares[square].unwrap() == Piece::King
+            })
+            .expect("could not find the king");
+
+        let to_move = color_to_check.opposite_color();
+        for square in 0..64 {
+            if !self.board.colors[square].is_some_and(|color| color == to_move) {
+                continue;
+            }
+
+            match self.board.squares[square].unwrap() {
+                Piece::Pawn => {
+                    let pawn_move_offsets = match self.board.to_move {
+                        Color::White => [8, 16, 7, 9],
+                        Color::Black => [-8, -16, -7, -9],
+                    };
+
+                    for capture_offset in &pawn_move_offsets[2..] {
+                        let target_square = {
+                            let tmp = square as isize + capture_offset;
+                            if !(0..64).contains(&tmp) {
+                                continue;
+                            }
+                            tmp as usize
+                        };
+
+                        if Self::is_pacman_move(square, target_square) {
+                            continue;
+                        }
+
+                        if target_square == king_square {
+                            return true;
+                        }
+                    }
+                }
+                Piece::King => {
+                    for offset in self.direction_offsets {
+                        let target_square = {
+                            let tmp = square as isize + offset;
+                            if !(0..64).contains(&tmp) {
+                                continue;
+                            }
+                            tmp as usize
+                        };
+
+                        if !Self::is_pacman_move(square, target_square)
+                            && target_square == king_square
+                        {
+                            return true;
+                        }
+                    }
+                }
+                Piece::Knight => {
+                    let knight_move_offsets = [-17, -15, -10, -6, 6, 10, 15, 17];
+
+                    for offset in knight_move_offsets {
+                        let target_square = {
+                            let tmp = square as isize + offset;
+                            if !(0..64).contains(&tmp) {
+                                continue;
+                            }
+                            tmp as usize
+                        };
+
+                        if !Self::is_pacman_move(square, target_square)
+                            && target_square == king_square
+                        {
+                            return true;
+                        }
+                    }
+                }
+                Piece::Bishop | Piece::Queen | Piece::Rook => {
+                    let piece = self.board.squares[square]
+                        .expect("should not be generating sliding moves from an empty square");
+
+                    let start_direction_index = if piece == Piece::Bishop { 4 } else { 0 };
+                    let end_direction_index = if piece == Piece::Rook { 4 } else { 8 };
+
+                    for direction_index in start_direction_index..end_direction_index {
+                        for n in 0..self.num_squares_to_edge[square][direction_index] {
+                            let target_square = square as isize
+                                + self.direction_offsets[direction_index] * (n as isize + 1);
+                            let target_square = target_square as usize;
+                            if target_square == king_square {
+                                return true;
+                            }
+
+                            match self.board.colors[target_square] {
+                                None => continue,
+                                Some(_) => break,
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        false
     }
 
     fn calculate_opponent_attack_map(&mut self) -> [bool; 64] {
