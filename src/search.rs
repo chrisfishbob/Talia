@@ -3,10 +3,10 @@ use crate::{
     move_generation::{Move, MoveGenerator},
 };
 
-// TODO: Use some infinity value instead
-const CHECK_MATE_EVAL: i32 = 9999;
+// 
+const INF: i32 = i32::MAX;
 
-pub fn search(move_generator: &mut MoveGenerator, depth: u32) -> i32 {
+pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, beta: i32) -> i32 {
     if depth == 0 {
         return evaluate(move_generator);
     }
@@ -14,37 +14,40 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32) -> i32 {
     let moves = move_generator.generate_moves();
     if moves.is_empty() {
         if move_generator.is_in_check(move_generator.board.to_move) {
-            return -CHECK_MATE_EVAL;
+            return -INF;
         } else {
             return 0;
         }
     }
 
-    let mut best_eval = -CHECK_MATE_EVAL;
-
     for mv in moves.iter() {
         move_generator.board.move_piece(mv);
-        let eval = -search(move_generator, depth - 1);
-        best_eval = std::cmp::max(eval, best_eval);
+        let eval = -search(move_generator, depth - 1, -beta, -alpha);
         move_generator.board.unmake_move(mv).unwrap();
+
+        if eval >= beta {
+            return beta;
+        }
+        alpha = std::cmp::max(eval, alpha);
     }
 
-    best_eval
+    alpha
 }
 
 pub fn find_best_move(move_generator: &mut MoveGenerator, depth: u32) -> Option<Move> {
     let moves = move_generator.generate_moves();
     let mut best_move = None;
-    let mut best_eval = -CHECK_MATE_EVAL;
+    let mut alpha = -INF;
+    let beta = INF;
 
     for mv in moves {
         move_generator.board.move_piece(&mv);
-        let eval = -search(move_generator, depth);
-        if eval >= best_eval {
-            best_eval = eval;
+        let eval = -search(move_generator, depth, -beta, -alpha);
+        move_generator.board.unmake_move(&mv).unwrap();
+        if eval > alpha {
+            alpha = eval;
             best_move = Some(mv.clone());
         }
-        move_generator.board.unmake_move(&mv).unwrap();
     }
 
     best_move

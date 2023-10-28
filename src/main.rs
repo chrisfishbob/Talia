@@ -13,9 +13,9 @@ use crate::game_manager::start_new_game;
 use crate::piece::Color;
 
 fn main() -> Result<(), Box<dyn Error>> {
-    println!("Talia Chess Engine: v0.0.1");
+    println!("Talia Chess Engine: v0.5.0");
 
-    let search_depth = 3;
+    let search_depth = 4;
     start_new_game(None, Color::White, search_depth)?;
 
     Ok(())
