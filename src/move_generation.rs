@@ -1,6 +1,7 @@
 use core::fmt;
 
 use crate::board::Board;
+use crate::errors::BoardError;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 
@@ -25,6 +26,49 @@ impl Move {
             starting_square: start as usize,
             target_square: target as usize,
             flag,
+        }
+    }
+
+    pub fn try_from_algebraic_notation(
+        algebraic_notation: &str,
+        move_generator: &mut MoveGenerator,
+    ) -> Result<Self, BoardError> {
+        let promotion_piece = match algebraic_notation.chars().nth(4) {
+            Some('q') => Some(Piece::Queen),
+            Some('r') => Some(Piece::Rook),
+            Some('n') => Some(Piece::Knight),
+            Some('b') => Some(Piece::Bishop),
+            None => None,
+            _ => Err(BoardError::new("Not a known promotion piece of q, r, n or b"))?,
+        };
+
+        let starting_square =
+            Square::from_algebraic_notation(&algebraic_notation[0..2])?.as_index();
+        let target_square = Square::from_algebraic_notation(&algebraic_notation[2..4])?.as_index();
+
+        let moves = move_generator.generate_moves();
+
+        match promotion_piece {
+            None => moves
+                .into_iter()
+                .find(|mv| {
+                    mv.starting_square == starting_square && mv.target_square == target_square
+                })
+                .ok_or(BoardError::new("Not a legal move")),
+            Some(promotion_piece) => moves
+                .into_iter()
+                .find(|mv| {
+                    mv.starting_square == starting_square
+                        && mv.target_square == target_square
+                        && match mv.flag {
+                            Flag::Capture(piece) if piece == promotion_piece => true,
+                            Flag::CaptureWithPromotion(_, piece) if piece == promotion_piece => {
+                                true
+                            }
+                            _ => false,
+                        }
+                })
+                .ok_or(BoardError::new("Not a legal move")),
         }
     }
 }
@@ -480,7 +524,9 @@ impl MoveGenerator {
                             tmp as usize
                         };
 
-                        if !Self::is_pacman_move(square, target_square) && target_square == king_square {
+                        if !Self::is_pacman_move(square, target_square)
+                            && target_square == king_square
+                        {
                             return true;
                         }
                     }
