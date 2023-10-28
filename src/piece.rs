@@ -31,6 +31,18 @@ impl Piece {
     pub fn is_sliding_piece(&self) -> bool {
         matches!(self, Piece::Queen | Piece::Rook | Piece::Bishop)
     }
+
+    pub fn piece_value(&self) -> i32 {
+        match self {
+            Self::Pawn => 1,
+            Self::Knight => 3,
+            Self::Bishop => 3,
+            Self::Rook => 5,
+            Self::Queen => 9,
+            // King is not included in material count
+            Self::King => 0,
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]

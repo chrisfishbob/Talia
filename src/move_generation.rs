@@ -5,7 +5,7 @@ use crate::errors::BoardError;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 
-#[derive(Eq, PartialEq)]
+#[derive(Eq, PartialEq, Clone)]
 pub struct Move {
     pub starting_square: usize,
     pub target_square: usize,
@@ -88,7 +88,7 @@ impl fmt::Debug for Move {
     }
 }
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Flag {
     None,
     KingsideCastle,
@@ -492,7 +492,7 @@ impl MoveGenerator {
         (target_rank - starting_rank).abs() > 2 || (target_file - starting_file).abs() > 2
     }
 
-    fn is_in_check(&mut self, color_to_check: Color) -> bool {
+    pub fn is_in_check(&mut self, color_to_check: Color) -> bool {
         let king_square = (0..64)
             .find(|&square| {
                 self.board.colors[square].is_some()
@@ -746,7 +746,6 @@ mod tests {
         let number_of_positions = move_generator.perft_test(1);
 
         assert!(number_of_positions == 20);
-        // let expected_number_of_positions = [1, 20, 400, 8092, 197281];
 
         Ok(())
     }
