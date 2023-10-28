@@ -24,7 +24,13 @@ pub fn start_new_game(fen: Option<&str>, player_color: Color, engine_search_dept
             }
         } else {
             // Talia plays
+            println!("Talia is thingking ...");
+            let start_time = std::time::Instant::now();
             let best_move = find_best_move(&mut move_generator, engine_search_depth);
+            let end_time = std::time::Instant::now();
+            let elapsed_time = end_time.duration_since(start_time).as_millis();
+            println!("Talia thought for {} milliseconds at depth {}", elapsed_time, engine_search_depth);
+
             match best_move {
                 None => {
                     if move_generator.is_in_check(board.to_move) {

@@ -3,7 +3,6 @@ use crate::{
     move_generation::{Move, MoveGenerator},
 };
 
-// 
 const INF: i32 = i32::MAX;
 
 pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, beta: i32) -> i32 {
