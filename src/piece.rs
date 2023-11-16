@@ -34,11 +34,11 @@ impl Piece {
 
     pub fn piece_value(&self) -> i32 {
         match self {
-            Self::Pawn => 1,
-            Self::Knight => 3,
-            Self::Bishop => 3,
-            Self::Rook => 5,
-            Self::Queen => 9,
+            Self::Pawn => 100,
+            Self::Knight => 300,
+            Self::Bishop => 300,
+            Self::Rook => 500,
+            Self::Queen => 900,
             // King is not included in material count
             Self::King => 0,
         }

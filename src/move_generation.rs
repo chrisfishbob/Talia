@@ -481,7 +481,7 @@ impl MoveGenerator {
         }
     }
 
-    fn is_pacman_move(start: usize, target: usize) -> bool {
+    pub fn is_pacman_move(start: usize, target: usize) -> bool {
         let starting_rank = start as isize / 8;
         let starting_file = start as isize % 8;
         let target_rank = target as isize / 8;
