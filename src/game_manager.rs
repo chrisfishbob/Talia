@@ -47,7 +47,8 @@ pub fn start_new_game(
 
             println!("Talia is thinking ...");
             let start_time = std::time::Instant::now();
-            let (best_move, best_eval) = find_best_move(&mut moves, &mut move_generator, engine_search_depth);
+            let (best_move, mut best_eval) =
+                find_best_move(&mut moves, &mut move_generator, engine_search_depth);
             let end_time = std::time::Instant::now();
             let elapsed_time = end_time.duration_since(start_time).as_millis();
             println!(
@@ -58,6 +59,12 @@ pub fn start_new_game(
             );
 
             println!("Best move: {:?}", best_move);
+
+            // Display the eval without perspective.
+            // Positive eval: white has advantage, negative eval: black has advantage
+            if move_generator.board.to_move == Color::Black {
+                best_eval *= -1
+            }
             board.move_piece(&best_move);
             println!("Eval: {best_eval}")
         }

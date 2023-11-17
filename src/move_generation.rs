@@ -61,7 +61,7 @@ impl Move {
                     mv.starting_square == starting_square
                         && mv.target_square == target_square
                         && match mv.flag {
-                            Flag::Capture(piece) if piece == promotion_piece => true,
+                            Flag::PromoteTo(piece) if piece == promotion_piece => true,
                             Flag::CaptureWithPromotion(_, piece) if piece == promotion_piece => {
                                 true
                             }

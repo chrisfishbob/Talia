@@ -1,12 +1,33 @@
+use reqwest::{self, blocking::Client};
+use serde::Deserialize;
 use std::sync::atomic::{AtomicI32, Ordering};
 
 use crate::{
+    errors::BoardError,
     evaluate::evaluate,
     move_generation::{Flag, Move, MoveGenerator},
+    piece::Color,
 };
 
 const INF: i32 = i32::MAX;
 pub static COUNTER: AtomicI32 = AtomicI32::new(0);
+
+#[allow(unused)]
+#[derive(Debug, Deserialize)]
+pub struct TablebaseMove {
+    dtz: i32,
+    precise_dtz: i32,
+    san: String,
+    uci: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ResultData {
+    pub dtz: i32,
+    pub mainline: Vec<TablebaseMove>,
+    pub precise_dtz: i32,
+    pub winner: Option<String>,
+}
 
 pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, beta: i32) -> i32 {
     if depth == 0 {
@@ -40,6 +61,7 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, be
     alpha
 }
 
+// TODO: Modify move generation to make this more efficient
 fn search_all_captures(move_generator: &mut MoveGenerator, alpha: i32, beta: i32) -> i32 {
     let eval = evaluate(move_generator);
     if eval >= beta {
@@ -73,8 +95,70 @@ fn search_all_captures(move_generator: &mut MoveGenerator, alpha: i32, beta: i32
     alpha
 }
 
-pub fn find_best_move(moves: &mut [Move], move_generator: &mut MoveGenerator, depth: u32) -> (Move, i32) {
+// TODO: Use standard query rather than mainline
+pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32), BoardError> {
+    let base_tb_server_url = "http://tablebase.lichess.ovh/standard/mainline";
+    // Make FEN URL friendly
+    let params = [("fen", move_generator.board.to_fen().replace(' ', "_"))];
+    let client = Client::new();
+    let response = client
+        .get(base_tb_server_url)
+        .query(&params)
+        .send()
+        .map_err(|err| BoardError::new(&format!("{err}")))?;
+
+    let tb_response: ResultData = if response.status().is_success() {
+        response
+            .json()
+            .map_err(|err| BoardError::new(&format!("{err}")))?
+    } else {
+        return Err(BoardError::new("Call to tablebase failed"));
+    };
+
+    if tb_response.mainline.is_empty() {
+        return Err(BoardError::new("Did not find mainline move"))
+    }
+    let best_move =
+        Move::try_from_algebraic_notation(&tb_response.mainline[0].uci, move_generator)?;
+    let winning_color = match tb_response.winner.as_deref() {
+        Some("w") => Some(Color::White),
+        Some("b") => Some(Color::Black),
+        None => None,
+        _ => Err(BoardError::new("Received unknown winner field in tablebase query"))?,
+    };
+    let eval = match winning_color {
+        Some(color) => {
+            if color == move_generator.board.to_move {
+                INF
+            } else {
+                -INF
+            }
+        }
+        None => 0,
+    };
+    Ok((best_move, eval))
+}
+
+pub fn find_best_move(
+    moves: &mut [Move],
+    move_generator: &mut MoveGenerator,
+    depth: u32,
+) -> (Move, i32) {
     COUNTER.store(0, Ordering::Relaxed);
+
+    let pieces_left = move_generator
+        .board
+        .squares
+        .iter()
+        .filter(|sq| sq.is_some())
+        .count();
+    if pieces_left <= 7 {
+        // TODO: Add logging for when query fails
+        match query_tablebase(move_generator) {
+            Ok(tb_result) => return tb_result,
+            Err(err) => println!("{err}"),
+        }
+    }
     moves.sort_unstable_by_key(|mv| guess_move_score(move_generator, mv));
 
     let mut best_move = moves
@@ -126,7 +210,8 @@ mod tests {
         errors::BoardError,
         move_generation::{Flag, Move, MoveGenerator},
         piece::{Color, Piece},
-        square::Square, search::INF,
+        search::INF,
+        square::Square,
     };
 
     use super::find_best_move;
