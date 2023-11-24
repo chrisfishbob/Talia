@@ -6,7 +6,6 @@ use crate::{
     errors::BoardError,
     evaluate::evaluate,
     move_generation::{Flag, Move, MoveGenerator},
-    piece::Color,
 };
 
 const INF: i32 = i32::MAX;
@@ -14,19 +13,68 @@ pub static COUNTER: AtomicI32 = AtomicI32::new(0);
 
 #[allow(unused)]
 #[derive(Debug, Deserialize)]
-pub struct TablebaseMove {
-    dtz: i32,
-    precise_dtz: i32,
-    san: String,
-    uci: String,
+pub struct TablebaseResponse {
+    pub dtz: Option<i32>,
+    pub precise_dtz: Option<i32>,
+    pub dtm: Option<i32>,
+    pub checkmate: bool,
+    pub stalemate: bool,
+    pub insufficient_material: bool,
+    pub category: Category,
+    pub moves: Vec<TablebaseMove>,
 }
 
+#[allow(unused)]
 #[derive(Debug, Deserialize)]
-pub struct ResultData {
-    pub dtz: i32,
-    pub mainline: Vec<TablebaseMove>,
-    pub precise_dtz: i32,
-    pub winner: Option<String>,
+pub struct TablebaseMove {
+    uci: String,
+    san: String,
+    dtz: Option<i32>,
+    precise_dtz: Option<i32>,
+    dtm: Option<i32>,
+    zeroing: bool,
+    checkmate: bool,
+    stalemate: bool,
+    insufficient_material: bool,
+    category: Category,
+}
+
+#[derive(Debug, Deserialize, Eq, PartialEq)]
+pub enum Category {
+    #[serde(rename = "win")]
+    Win,
+    #[serde(rename = "loss")]
+    Loss,
+    #[serde(rename = "draw")]
+    Draw,
+}
+
+impl TablebaseResponse {
+    fn get_best_move(&self) -> &TablebaseMove {
+        let mut best_move = &self.moves[0];
+
+        for mv in &self.moves {
+            match best_move.category {
+                Category::Win => {
+                    if mv.category == Category::Draw || mv.category == Category::Loss {
+                        best_move = mv
+                    }
+                }
+                Category::Loss => {
+                    if mv.category == Category::Loss && mv.dtm > best_move.dtm {
+                        best_move = mv
+                    }
+                }
+                Category::Draw => {
+                    if mv.category == Category::Loss {
+                        best_move = mv
+                    }
+                }
+            }
+        }
+
+        best_move
+    }
 }
 
 pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, beta: i32) -> i32 {
@@ -97,7 +145,7 @@ fn search_all_captures(move_generator: &mut MoveGenerator, alpha: i32, beta: i32
 
 // TODO: Use standard query rather than mainline
 pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32), BoardError> {
-    let base_tb_server_url = "http://tablebase.lichess.ovh/standard/mainline";
+    let base_tb_server_url = "http://tablebase.lichess.ovh/standard";
     // Make FEN URL friendly
     let params = [("fen", move_generator.board.to_fen().replace(' ', "_"))];
     let client = Client::new();
@@ -107,7 +155,7 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
         .send()
         .map_err(|err| BoardError::new(&format!("{err}")))?;
 
-    let tb_response: ResultData = if response.status().is_success() {
+    let tb_response: TablebaseResponse = if response.status().is_success() {
         response
             .json()
             .map_err(|err| BoardError::new(&format!("{err}")))?
@@ -115,28 +163,17 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
         return Err(BoardError::new("Call to tablebase failed"));
     };
 
-    if tb_response.mainline.is_empty() {
-        return Err(BoardError::new("Did not find mainline move"))
-    }
-    let best_move =
-        Move::try_from_algebraic_notation(&tb_response.mainline[0].uci, move_generator)?;
-    let winning_color = match tb_response.winner.as_deref() {
-        Some("w") => Some(Color::White),
-        Some("b") => Some(Color::Black),
-        None => None,
-        _ => Err(BoardError::new("Received unknown winner field in tablebase query"))?,
+    let best_move = tb_response.get_best_move();
+    let eval = match best_move.category {
+        Category::Win => -INF,
+        Category::Draw => 0,
+        Category::Loss => INF,
     };
-    let eval = match winning_color {
-        Some(color) => {
-            if color == move_generator.board.to_move {
-                INF
-            } else {
-                -INF
-            }
-        }
-        None => 0,
-    };
-    Ok((best_move, eval))
+
+    Ok((
+        Move::try_from_algebraic_notation(&best_move.uci, move_generator)?,
+        eval,
+    ))
 }
 
 pub fn find_best_move(

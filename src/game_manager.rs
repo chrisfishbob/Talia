@@ -9,6 +9,12 @@ use crate::{
     search::{find_best_move, COUNTER},
 };
 
+enum GameState {
+    Active,
+    Checkmate,
+    Stalemate,
+}
+
 pub fn start_new_game(
     fen: Option<&str>,
     player_color: Option<Color>,
@@ -21,6 +27,18 @@ pub fn start_new_game(
 
     loop {
         let mut move_generator = MoveGenerator::new(board.clone());
+        match check_game_state(&mut move_generator) {
+            GameState::Active => {}
+            GameState::Checkmate => {
+                println!("Checkmate!");
+                return Ok(());
+            }
+            GameState::Stalemate => {
+                println!("Stalemate!");
+                return Ok(());
+            }
+        }
+
         if player_color.is_some_and(|color| color == board.to_move) {
             println!("{}", board);
             let input = get_uci_move_input();
@@ -35,20 +53,25 @@ pub fn start_new_game(
                 println!("{}", board);
             }
 
-            let mut moves = move_generator.generate_moves();
-            if moves.is_empty() {
-                if move_generator.is_in_check(board.to_move) {
-                    println!("CHECKMATE!!!!!");
-                } else {
-                    println!("Stalemate");
+            match check_game_state(&mut move_generator) {
+                GameState::Active => {}
+                GameState::Checkmate => {
+                    println!("Checkmate!");
+                    return Ok(());
                 }
-                return Ok(());
+                GameState::Stalemate => {
+                    println!("Stalemate!");
+                    return Ok(());
+                }
             }
 
             println!("Talia is thinking ...");
             let start_time = std::time::Instant::now();
-            let (best_move, mut best_eval) =
-                find_best_move(&mut moves, &mut move_generator, engine_search_depth);
+            let (best_move, mut best_eval) = find_best_move(
+                &mut move_generator.generate_moves(),
+                &mut move_generator,
+                engine_search_depth,
+            );
             let end_time = std::time::Instant::now();
             let elapsed_time = end_time.duration_since(start_time).as_millis();
             println!(
@@ -68,6 +91,20 @@ pub fn start_new_game(
             board.move_piece(&best_move);
             println!("Eval: {best_eval}")
         }
+    }
+}
+
+fn check_game_state(move_generator: &mut MoveGenerator) -> GameState {
+    let moves = move_generator.generate_moves();
+    match moves.is_empty() {
+        true => {
+            if move_generator.is_in_check(move_generator.board.to_move) {
+                GameState::Checkmate
+            } else {
+                GameState::Stalemate
+            }
+        }
+        false => GameState::Active,
     }
 }
 

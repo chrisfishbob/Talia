@@ -15,7 +15,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("Talia Chess Engine: v1.0.1");
 
     let search_depth = 6;
-    let fen = "r3k2r/p1ppqpbp/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPPP/R3K2R w KQkq - 0 1";
+    // let fen = "8/8/3k4/8/4K3/4P3/8/8 w - - 0 1";
+    let fen = "8/8/8/8/8/1k6/4r3/K7 w - - 0 1";
+    // let fen = "r3k2r/p1ppqpbp/bn2pnp1/3PN3/1p2P3/2N2Q2/PPPBBPPP/R3K2R w KQkq - 0 1";
     game_manager::start_new_game(Some(fen), Some(Color::White), search_depth)?;
 
     Ok(())

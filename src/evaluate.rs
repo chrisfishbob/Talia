@@ -6,7 +6,11 @@ pub fn evaluate(move_generator: &MoveGenerator) -> i32 {
 
     let net_eval = white_eval - black_eval;
 
-    if move_generator.board.to_move == Color::White {net_eval} else {-net_eval}
+    if move_generator.board.to_move == Color::White {
+        net_eval
+    } else {
+        -net_eval
+    }
 }
 
 fn count_material(move_generator: &MoveGenerator, color: Color) -> i32 {
@@ -15,7 +19,7 @@ fn count_material(move_generator: &MoveGenerator, color: Color) -> i32 {
         match move_generator.board.colors[square] {
             Some(c) if c == color => {
                 count += move_generator.board.squares[square].unwrap().piece_value();
-            },
+            }
             _ => continue,
         }
     }

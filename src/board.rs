@@ -307,8 +307,8 @@ impl Board {
         match mv.flag {
             Flag::PromoteTo(piece) | Flag::CaptureWithPromotion(_, piece) => {
                 self.squares[mv.target_square] = Some(piece);
-            },
-            _ => self.squares[mv.target_square] = self.squares[mv.starting_square]
+            }
+            _ => self.squares[mv.target_square] = self.squares[mv.starting_square],
         }
         self.colors[mv.target_square] = self.colors[mv.starting_square];
         self.squares[mv.starting_square] = None;
@@ -371,7 +371,6 @@ impl Board {
                     self.colors[Square::F1.as_index()] = None;
                     self.squares[Square::G1.as_index()] = None;
                     self.colors[Square::G1.as_index()] = None;
-
                 }
                 Color::Black => {
                     self.squares[Square::H8.as_index()] = Some(Piece::Rook);
@@ -394,7 +393,6 @@ impl Board {
                     self.colors[Square::C1.as_index()] = None;
                     self.squares[Square::D1.as_index()] = None;
                     self.colors[Square::D1.as_index()] = None;
-
                 }
                 Color::Black => {
                     self.squares[Square::A8.as_index()] = Some(Piece::Rook);
@@ -1454,7 +1452,7 @@ mod tests {
             .make_move(Move::from_square(D8, D7, Flag::None))
             .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
             .try_into()?;
-        
+
         let expected_board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -1487,7 +1485,7 @@ mod tests {
             .make_move(Move::from_square(E1, C1, Flag::QueensideCastle))
             .make_move(Move::from_square(E8, C8, Flag::QueensideCastle))
             .try_into()?;
-        
+
         let expected_board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))

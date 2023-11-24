@@ -162,7 +162,7 @@ impl BoardBuilder {
                 black_queenside_castling_priviledge: castling_rights.contains(&'q'),
                 half_move_clock,
             },
-            board_state_history: Vec::new()
+            board_state_history: Vec::new(),
         })
     }
 
