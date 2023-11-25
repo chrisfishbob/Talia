@@ -1,6 +1,5 @@
 // Source: https://www.chessprogramming.org/Simplified_Evaluation_Function
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const PAWN_SQUARE_TABLE: [i32; 64] = [
      0,  0,  0,  0,  0,  0,  0,  0,
@@ -13,7 +12,6 @@ pub const PAWN_SQUARE_TABLE: [i32; 64] = [
      0,  0,  0,  0,  0,  0,  0,  0
 ];
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const KNIGHT_SQUARE_TABLE: [i32; 64] = [
     -50,-40,-30,-30,-30,-30,-40,-50,
@@ -26,7 +24,6 @@ pub const KNIGHT_SQUARE_TABLE: [i32; 64] = [
     -50,-40,-30,-30,-30,-30,-40,-50,
 ];
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const BISHOP_SQUARE_TABLE: [i32; 64] = [
     -20,-10,-10,-10,-10,-10,-10,-20,
@@ -39,7 +36,6 @@ pub const BISHOP_SQUARE_TABLE: [i32; 64] = [
     -20,-10,-10,-10,-10,-10,-10,-20,
 ];
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const ROOK_SQUARE_TABLE: [i32; 64] = [
       0,  0,  0,  0,  0,  0,  0,  0,
@@ -52,7 +48,6 @@ pub const ROOK_SQUARE_TABLE: [i32; 64] = [
       0,  0,  0,  5,  5,  0,  0,  0
 ];
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const QUEEN_SQUARE_TABLE: [i32; 64] = [
     -20,-10,-10, -5, -5,-10,-10,-20,
@@ -65,7 +60,6 @@ pub const QUEEN_SQUARE_TABLE: [i32; 64] = [
     -20,-10,-10, -5, -5,-10,-10,-20
 ];
 
-#[allow(unused)]
 #[rustfmt::skip]
 pub const KING_MIDDLE_GAME_SQUARE_TABLE: [i32; 64] = [
     -30,-40,-40,-50,-50,-40,-40,-30,
@@ -77,4 +71,3 @@ pub const KING_MIDDLE_GAME_SQUARE_TABLE: [i32; 64] = [
      20, 20,  0,  0,  0,  0, 20, 20,
      20, 30, 10,  0,  0, 10, 30, 20
 ];
-
