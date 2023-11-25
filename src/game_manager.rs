@@ -18,19 +18,16 @@ enum GameState {
 pub struct Game {
     player_color: Option<Color>,
     board: Board,
-    engine_search_depth: u32
+    engine_search_depth: u32,
 }
 
 impl Game {
     pub fn try_from_fen(
-        fen: Option<&str>,
+        fen: &str,
         player_color: Option<Color>,
         engine_search_depth: u32,
     ) -> Result<Self, BoardError> {
-        let board: Board = match fen {
-            None => BoardBuilder::from_starting_position().try_into()?,
-            Some(fen) => BoardBuilder::try_from_fen(fen)?,
-        };
+        let board = BoardBuilder::try_from_fen(fen)?;
 
         Ok(Self {
             player_color,
@@ -54,7 +51,10 @@ impl Game {
                 }
             }
 
-            if self.player_color.is_some_and(|color| color == self.board.to_move) {
+            if self
+                .player_color
+                .is_some_and(|color| color == self.board.to_move)
+            {
                 println!("{}", self.board);
                 let input = self.get_uci_move_input();
                 match Move::try_from_algebraic_notation(&input, &mut move_generator) {

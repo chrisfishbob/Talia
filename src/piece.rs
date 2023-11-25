@@ -48,7 +48,6 @@ impl Piece {
         }
     }
 
-    
     // TODO: The match can be optimized away using `Piece as usize`
     pub fn position_value(&self, square: usize, color: Color) -> i32 {
         let index = match color {
@@ -58,7 +57,7 @@ impl Piece {
                 // The piece square tables is inverted from Talia's representation
                 let rank = 7 - rank;
                 rank * 8 + file
-            },
+            }
             Color::Black => square,
         };
 
@@ -70,7 +69,7 @@ impl Piece {
             Self::Queen => QUEEN_SQUARE_TABLE[index],
             Self::King => KING_MIDDLE_GAME_SQUARE_TABLE[index],
         }
-    } 
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
