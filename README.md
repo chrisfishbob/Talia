@@ -30,3 +30,4 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 ✅ Position evaluation through material  
 ✅ Quiescence search  
 ✅ 7 piece Endgame syzygy tablebase  
+✅ Position evaluation through piece square tables 
