@@ -149,19 +149,86 @@ const BLACK_KING_MIDDLE_GAME_SQUARE_TABLE: [i32; 64] = [
 ];
 
 pub fn evaluate(move_generator: &MoveGenerator) -> i32 {
-    let white_material_eval = count_material(move_generator, Color::White);
-    let black_material_eval = count_material(move_generator, Color::Black);
-    let (white_positional_eval, black_positional_eval) =
-        count_positional_evaluation(move_generator);
+    // let white_material_eval = count_material(move_generator, Color::White);
+    // let black_material_eval = count_material(move_generator, Color::Black);
+    // let (white_positional_eval, black_positional_eval) =
+    //     count_positional_evaluation(move_generator);
 
-    let net_eval = (white_material_eval + white_positional_eval)
-        - (black_material_eval + black_positional_eval);
+    // let net_eval = (white_material_eval + white_positional_eval)
+    //     - (black_material_eval + black_positional_eval);
 
-    if move_generator.board.to_move == Color::White {
-        net_eval
-    } else {
-        -net_eval
+    // if move_generator.board.to_move == Color::White {
+    //     net_eval
+    // } else {
+    //     -net_eval
+    // }
+    //
+    let mut eval = 0;
+    let board = &move_generator.board;
+
+    for square in 0..64 {
+        match (board.squares[square], board.colors[square]) {
+            (Some(Piece::Pawn), Some(Color::White)) => {
+                eval += WHITE_PAWN_SQUARE_TABLE[square] + Piece::Pawn.piece_value()
+            }
+            (Some(Piece::Pawn), Some(Color::Black)) => {
+                eval -= BLACK_PAWN_SQUARE_TABLE[square] + Piece::Pawn.piece_value()
+            }
+            (Some(Piece::Knight), Some(Color::White)) => eval += KNIGHT_SQUARE_TABLE[square] + Piece::Knight.piece_value(),
+            (Some(Piece::Knight), Some(Color::Black)) => eval -= KNIGHT_SQUARE_TABLE[square] + Piece::Knight.piece_value(),
+            (Some(Piece::Bishop), Some(Color::White)) => eval += WHITE_BISHOP_SQUARE_TABLE[square] + Piece::Bishop.piece_value(),
+            (Some(Piece::Bishop), Some(Color::Black)) => eval -= BLACK_BISHOP_SQUARE_TABLE[square] + Piece::Bishop.piece_value(),
+            (Some(Piece::Rook), Some(Color::White)) => eval += WHITE_ROOK_SQUARE_TABLE[square] + Piece::Rook.piece_value(),
+            (Some(Piece::Rook), Some(Color::Black)) => eval -= BLACK_ROOK_SQUARE_TABLE[square] + Piece::Rook.piece_value(),
+            (Some(Piece::Queen), Some(Color::White)) => eval += WHITE_QUEEN_SQUARE_TABLE[square] + Piece::Queen.piece_value(),
+            (Some(Piece::Queen), Some(Color::Black)) => eval -= BLACK_QUEEN_SQUARE_TABLE[square] + Piece::Queen.piece_value(),
+            (Some(Piece::King), Some(Color::White)) => {
+                eval += WHITE_KING_MIDDLE_GAME_SQUARE_TABLE[square]
+            }
+            (Some(Piece::King), Some(Color::Black)) => {
+                eval -= BLACK_KING_MIDDLE_GAME_SQUARE_TABLE[square]
+            }
+            _ => continue,
+        }
     }
+    if move_generator.board.to_move == Color::White {
+        eval
+    } else {
+        -eval
+    }
+}
+
+fn calculate_static_net_eval(move_generator: &MoveGenerator) -> i32 {
+    let mut eval = 0;
+    let board = &move_generator.board;
+
+    for square in 0..64 {
+        match (board.squares[square], board.colors[square]) {
+            (Some(Piece::Pawn), Some(Color::White)) => {
+                eval += WHITE_PAWN_SQUARE_TABLE[square] + Piece::Pawn.piece_value()
+            }
+            (Some(Piece::Pawn), Some(Color::Black)) => {
+                eval -= BLACK_PAWN_SQUARE_TABLE[square] + Piece::Pawn.piece_value()
+            }
+            (Some(Piece::Knight), Some(Color::White)) => eval += KNIGHT_SQUARE_TABLE[square] + Piece::Knight.piece_value(),
+            (Some(Piece::Knight), Some(Color::Black)) => eval -= KNIGHT_SQUARE_TABLE[square] + Piece::Knight.piece_value(),
+            (Some(Piece::Bishop), Some(Color::White)) => eval += WHITE_BISHOP_SQUARE_TABLE[square] + Piece::Bishop.piece_value(),
+            (Some(Piece::Bishop), Some(Color::Black)) => eval -= BLACK_BISHOP_SQUARE_TABLE[square] + Piece::Bishop.piece_value(),
+            (Some(Piece::Rook), Some(Color::White)) => eval += WHITE_ROOK_SQUARE_TABLE[square] + Piece::Rook.piece_value(),
+            (Some(Piece::Rook), Some(Color::Black)) => eval -= BLACK_ROOK_SQUARE_TABLE[square] + Piece::Rook.piece_value(),
+            (Some(Piece::Queen), Some(Color::White)) => eval += WHITE_QUEEN_SQUARE_TABLE[square] + Piece::Queen.piece_value(),
+            (Some(Piece::Queen), Some(Color::Black)) => eval -= BLACK_QUEEN_SQUARE_TABLE[square] + Piece::Queen.piece_value(),
+            (Some(Piece::King), Some(Color::White)) => {
+                eval += WHITE_KING_MIDDLE_GAME_SQUARE_TABLE[square]
+            }
+            (Some(Piece::King), Some(Color::Black)) => {
+                eval -= BLACK_KING_MIDDLE_GAME_SQUARE_TABLE[square]
+            }
+            _ => continue,
+        }
+    }
+
+    eval
 }
 
 fn count_material(move_generator: &MoveGenerator, color: Color) -> i32 {
