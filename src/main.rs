@@ -9,6 +9,7 @@ pub mod move_generation;
 pub mod piece;
 pub mod search;
 pub mod square;
+pub mod piece_square_table;
 use crate::game_manager::Game;
 use crate::piece::Color;
 

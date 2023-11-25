@@ -1,5 +1,7 @@
 use core::fmt;
 
+use crate::piece_square_table::*;
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Piece {
     Pawn,
@@ -43,6 +45,30 @@ impl Piece {
             Self::King => 0,
         }
     }
+
+    
+    // TODO: This is pretty much just a simple array access, why so slow?
+    pub fn position_value(&self, square: usize, color: Color) -> i32 {
+        let index = match color {
+            Color::White => {
+                let rank = square / 8;
+                let file = square % 8;
+                // The piece square tables is inverted from Talia's representation
+                let rank = 7 - rank;
+                rank * 8 + file
+            },
+            Color::Black => square,
+        };
+
+        match self {
+            Self::Pawn => PAWN_SQUARE_TABLE[index],
+            Self::Knight => KNIGHT_SQUARE_TABLE[index],
+            Self::Bishop => BISHOP_SQUARE_TABLE[index],
+            Self::Rook => ROOK_SQUARE_TABLE[index],
+            Self::Queen => QUEEN_SQUARE_TABLE[index],
+            Self::King => KING_MIDDLE_GAME_SQUARE_TABLE[index],
+        }
+    } 
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
