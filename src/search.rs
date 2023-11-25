@@ -222,18 +222,26 @@ pub fn guess_move_score(move_generator: &MoveGenerator, mv: &Move) -> i32 {
     let mut score_guess: i32 = 0;
 
     let starting_piece = move_generator.board.squares[mv.starting_square].unwrap();
+    let piece_color = move_generator.board.colors[mv.starting_square].unwrap();
+    let capture_piece_multiplier = 10;
 
     match mv.flag {
         Flag::PromoteTo(piece) => score_guess += piece.piece_value(),
         Flag::Capture(piece) => {
-            score_guess += 10 * piece.piece_value() - starting_piece.piece_value()
+            score_guess +=
+                capture_piece_multiplier * piece.piece_value() - starting_piece.piece_value()
         }
         Flag::CaptureWithPromotion(captured_piece, promotion_piece) => {
-            score_guess += promotion_piece.piece_value() + 10 * captured_piece.piece_value()
+            score_guess += promotion_piece.piece_value()
+                + capture_piece_multiplier * captured_piece.piece_value()
                 - starting_piece.piece_value()
         }
         _ => (),
     }
+
+    let position_eval_diff = starting_piece.position_value(mv.target_square, piece_color)
+        - starting_piece.position_value(mv.starting_square, piece_color);
+    score_guess += position_eval_diff;
 
     // Negate score so that the moves with the highest score will be first
     -score_guess
