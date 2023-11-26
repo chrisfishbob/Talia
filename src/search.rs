@@ -55,6 +55,7 @@ impl TablebaseResponse {
 
         for mv in &self.moves {
             match best_move.category {
+                // The category is from the opponent's perspective. So a loss is good 
                 Category::Win => {
                     if mv.category == Category::Draw || mv.category == Category::Loss {
                         best_move = mv

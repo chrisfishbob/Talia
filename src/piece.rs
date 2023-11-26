@@ -61,14 +61,7 @@ impl Piece {
             Color::Black => square,
         };
 
-        match self {
-            Self::Pawn => PAWN_SQUARE_TABLE[index],
-            Self::Knight => KNIGHT_SQUARE_TABLE[index],
-            Self::Bishop => BISHOP_SQUARE_TABLE[index],
-            Self::Rook => ROOK_SQUARE_TABLE[index],
-            Self::Queen => QUEEN_SQUARE_TABLE[index],
-            Self::King => KING_MIDDLE_GAME_SQUARE_TABLE[index],
-        }
+        PIECE_SQUARE_TABLES[*self as usize][index]
     }
 }
 
