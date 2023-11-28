@@ -15,7 +15,7 @@ pub enum Piece {
 const PIECE_VALUE_TABLE: [i32; 6] = [
     100, // Pawn
     300, // Knight
-    300, // Bishop
+    325, // Bishop
     500, // Rook
     900, // Queen
     0, // King (not included in material count)
