@@ -31,3 +31,6 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 ✅ Quiescence search  
 ✅ 7 piece Endgame syzygy tablebase  
 ✅ Position evaluation through piece square tables 
+
+## Playing Strength
+Currently, Talia is around 1600+ ELO in Lichess and is improving rapidly.
