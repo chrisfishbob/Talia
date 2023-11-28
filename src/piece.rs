@@ -12,6 +12,15 @@ pub enum Piece {
     King,
 }
 
+const PIECE_VALUE_TABLE: [i32; 6] = [
+    100, // Pawn
+    300, // Knight
+    300, // Bishop
+    500, // Rook
+    900, // Queen
+    0, // King (not included in material count)
+];
+
 impl Piece {
     pub fn to_symbol(&self, color: Color) -> char {
         match (self, color) {
@@ -36,15 +45,7 @@ impl Piece {
 
     // TODO: The match can be optimized away using `Piece as usize`
     pub fn piece_value(&self) -> i32 {
-        match self {
-            Self::Pawn => 100,
-            Self::Knight => 300,
-            Self::Bishop => 300,
-            Self::Rook => 500,
-            Self::Queen => 900,
-            // King is not included in material count
-            Self::King => 0,
-        }
+        PIECE_VALUE_TABLE[*self as usize]
     }
 
     pub fn position_value(&self, square: usize, color: Color) -> i32 {
