@@ -14,7 +14,6 @@ pub enum Piece {
 
 impl Piece {
     pub fn to_symbol(&self, color: Color) -> char {
-        // TODO: Would unicode chess pieces look better here?
         match (self, color) {
             (Self::Pawn, Color::White) => 'P',
             (Self::Pawn, Color::Black) => 'p',
@@ -48,7 +47,6 @@ impl Piece {
         }
     }
 
-    // TODO: The match can be optimized away using `Piece as usize`
     pub fn position_value(&self, square: usize, color: Color) -> i32 {
         let index = match color {
             Color::White => {
