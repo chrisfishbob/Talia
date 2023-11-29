@@ -1,5 +1,6 @@
 use std::{error, fmt};
 
+// TODO: Migrate to anyhow
 #[derive(Debug, Clone)]
 pub struct BoardError {
     message: String,
