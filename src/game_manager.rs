@@ -4,7 +4,6 @@ use std::sync::atomic::Ordering;
 use crate::{
     board::Board,
     board_builder::BoardBuilder,
-    errors::BoardError,
     move_generation::{Move, MoveGenerator},
     piece::Color,
     search::{find_best_move, COUNTER},
@@ -37,7 +36,7 @@ impl Game {
         })
     }
 
-    pub fn start_game(&mut self) -> Result<(), BoardError> {
+    pub fn start_game(&mut self) -> Result<()> {
         loop {
             let mut move_generator = MoveGenerator::new(self.board.clone());
             match self.check_game_state(&mut move_generator) {
