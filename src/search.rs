@@ -1,9 +1,9 @@
+use anyhow::{bail, Result};
 use reqwest::{self, blocking::Client};
 use serde::Deserialize;
 use std::sync::atomic::{AtomicI32, Ordering};
 
 use crate::{
-    errors::BoardError,
     evaluate::evaluate,
     move_generation::{Flag, Move, MoveGenerator},
 };
@@ -151,23 +151,17 @@ fn search_all_captures(move_generator: &mut MoveGenerator, alpha: i32, beta: i32
 }
 
 // TODO: Use standard query rather than mainline
-pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32), BoardError> {
+pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)> {
     let base_tb_server_url = "http://tablebase.lichess.ovh/standard";
     // Make FEN URL friendly
     let params = [("fen", move_generator.board.to_fen().replace(' ', "_"))];
     let client = Client::new();
-    let response = client
-        .get(base_tb_server_url)
-        .query(&params)
-        .send()
-        .map_err(|err| BoardError::new(&format!("{err}")))?;
+    let response = client.get(base_tb_server_url).query(&params).send()?;
 
     let tb_response: TablebaseResponse = if response.status().is_success() {
-        response
-            .json()
-            .map_err(|err| BoardError::new(&format!("{err}")))?
+        response.json()?
     } else {
-        return Err(BoardError::new("Call to tablebase failed"));
+        bail!("Call to tablebase failed");
     };
 
     let best_move = tb_response.get_best_move();
