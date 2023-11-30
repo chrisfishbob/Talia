@@ -2,7 +2,6 @@ use anyhow::Result;
 
 pub mod board;
 pub mod board_builder;
-pub mod errors;
 pub mod evaluate;
 pub mod game_manager;
 pub mod move_generation;

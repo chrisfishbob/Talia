@@ -1,4 +1,4 @@
-use crate::errors::BoardError;
+use anyhow::{bail, Result};
 
 #[derive(Copy, Clone, Debug)]
 pub struct Sq(u8);
@@ -77,7 +77,7 @@ impl Square {
         self as usize
     }
 
-    pub fn from_algebraic_notation(s: &str) -> Result<Self, BoardError> {
+    pub fn from_algebraic_notation(s: &str) -> Result<Self> {
         match s {
             "a1" => Ok(Square::A1),
             "b1" => Ok(Square::B1),
@@ -143,9 +143,7 @@ impl Square {
             "f8" => Ok(Square::F8),
             "g8" => Ok(Square::G8),
             "h8" => Ok(Square::H8),
-            square_string => Err(BoardError::new(
-                format!("Invalid square string: {square_string}").as_str(),
-            )),
+            square_string => bail!("Invalid square string: {square_string}"),
         }
     }
 
