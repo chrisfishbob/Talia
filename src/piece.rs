@@ -43,7 +43,6 @@ impl Piece {
         matches!(self, Piece::Queen | Piece::Rook | Piece::Bishop)
     }
 
-    // TODO: The match can be optimized away using `Piece as usize`
     pub fn piece_value(&self) -> i32 {
         PIECE_VALUE_TABLE[*self as usize]
     }
