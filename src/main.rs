@@ -1,4 +1,4 @@
-use std::error::Error;
+use anyhow::Result;
 
 pub mod board;
 pub mod board_builder;
@@ -13,7 +13,7 @@ pub mod square;
 use crate::game_manager::Game;
 use crate::piece::Color;
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
     println!("Talia Chess Engine: v1.1.0");
 
     let search_depth = 6;

@@ -1,8 +1,8 @@
 use crate::board_builder::BoardBuilder;
-use crate::errors::BoardError;
 use crate::move_generation::{Flag, Move};
 use crate::piece::{Color, Piece};
 use crate::square::Square;
+use anyhow::{anyhow, Result};
 use std::fmt;
 
 #[derive(PartialEq, Eq, Clone)]
@@ -322,18 +322,18 @@ impl Board {
         }
     }
 
-    pub fn unmake_move(&mut self, mv: &Move) -> Result<(), BoardError> {
+    pub fn unmake_move(&mut self, mv: &Move) -> Result<()> {
         self.board_state = self
             .board_state_history
             .pop()
-            .ok_or(BoardError::new("Already at oldest move"))?;
+            .ok_or(anyhow!("Already at oldest move"))?;
 
         self.to_move = self.to_move.opposite_color();
 
         let error_message = "Tried to unmake move, but could not find piece";
         // First move the piece back to its starting square
-        let piece = self.squares[mv.target_square].ok_or(BoardError::new(error_message))?;
-        let color = self.colors[mv.target_square].ok_or(BoardError::new(error_message))?;
+        let piece = self.squares[mv.target_square].ok_or(anyhow!(error_message))?;
+        let color = self.colors[mv.target_square].ok_or(anyhow!(error_message))?;
         self.put_piece(mv.starting_square, piece, color);
 
         match mv.flag {
@@ -548,11 +548,11 @@ mod tests {
     use crate::{
         board::Board,
         board_builder::BoardBuilder,
-        errors::BoardError,
         move_generation::{Flag, Move},
         piece::{Color::*, Piece::*},
         square::Square::*,
     };
+    use anyhow::Result;
 
     #[test]
     fn test_starting_position_board_config() {
@@ -600,7 +600,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_fen_empty_board() -> Result<(), BoardError> {
+    fn test_from_fen_empty_board() -> Result<()> {
         let empty_board = Board::default();
         let empty_board_from_fen = BoardBuilder::try_from_fen("8/8/8/8/8/8/8/8 w - - 0 1")?;
 
@@ -610,7 +610,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_fen_sicilian_defense() -> Result<(), BoardError> {
+    fn test_from_fen_sicilian_defense() -> Result<()> {
         let mut starting_board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(C7, C5, Flag::PawnDoublePush))
@@ -631,7 +631,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_puzzle_fen() -> Result<(), BoardError> {
+    fn test_from_puzzle_fen() -> Result<()> {
         let board: Board = BoardBuilder::new()
             .piece(D1, Bishop, Black)
             .piece(A2, Pawn, White)
@@ -674,7 +674,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_fen_italian_game() -> Result<(), BoardError> {
+    fn test_to_fen_italian_game() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -691,7 +691,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_fen_advanced_caro_kann() -> Result<(), BoardError> {
+    fn test_to_fen_advanced_caro_kann() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(C7, C6, Flag::None))
@@ -714,7 +714,7 @@ mod tests {
     }
 
     #[test]
-    fn test_to_fen_marshall_attack() -> Result<(), BoardError> {
+    fn test_to_fen_marshall_attack() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -762,7 +762,7 @@ mod tests {
     }
 
     #[test]
-    fn test_en_passant_capture_white() -> Result<(), BoardError> {
+    fn test_en_passant_capture_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -780,7 +780,7 @@ mod tests {
     }
 
     #[test]
-    fn test_en_passant_capture_black() -> Result<(), BoardError> {
+    fn test_en_passant_capture_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -799,7 +799,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_promotion_white() -> Result<(), BoardError> {
+    fn test_pawn_promotion_white() -> Result<()> {
         let mut board: Board = BoardBuilder::new()
             .piece(H7, Pawn, White)
             .piece(E1, King, White)
@@ -815,7 +815,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_promotion_black() -> Result<(), BoardError> {
+    fn test_pawn_promotion_black() -> Result<()> {
         let mut board: Board = BoardBuilder::new()
             .piece(H2, Pawn, Black)
             .piece(E1, King, White)
@@ -846,7 +846,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_fifty_move_rule_resetting_move_pawn_push() -> Result<(), BoardError> {
+    fn test_is_fifty_move_rule_resetting_move_pawn_push() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(B8, C6, Flag::None))
@@ -859,7 +859,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_fifty_move_rule_resetting_move_capture() -> Result<(), BoardError> {
+    fn test_is_fifty_move_rule_resetting_move_capture() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -873,7 +873,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_king_loses_castling_priviledges_white() -> Result<(), BoardError> {
+    fn test_moving_king_loses_castling_priviledges_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -887,7 +887,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_king_loses_castling_priviledges_black() -> Result<(), BoardError> {
+    fn test_moving_king_loses_castling_priviledges_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -902,7 +902,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_h1_rook_loses_castling_priviledges_white() -> Result<(), BoardError> {
+    fn test_moving_h1_rook_loses_castling_priviledges_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -918,7 +918,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_a1_rook_loses_castling_priviledges_white() -> Result<(), BoardError> {
+    fn test_moving_a1_rook_loses_castling_priviledges_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(B1, C3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -934,7 +934,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_h8_rook_loses_castling_priviledges_black() -> Result<(), BoardError> {
+    fn test_moving_h8_rook_loses_castling_priviledges_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -951,7 +951,7 @@ mod tests {
     }
 
     #[test]
-    fn test_moving_a8_rook_loses_castling_priviledges_black() -> Result<(), BoardError> {
+    fn test_moving_a8_rook_loses_castling_priviledges_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(B8, F6, Flag::None))
@@ -968,7 +968,7 @@ mod tests {
     }
 
     #[test]
-    fn test_capturing_h1_rook_loses_castling_priviledges_white() -> Result<(), BoardError> {
+    fn test_capturing_h1_rook_loses_castling_priviledges_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -989,7 +989,7 @@ mod tests {
     }
 
     #[test]
-    fn test_capturing_a1_rook_loses_castling_priviledges_white() -> Result<(), BoardError> {
+    fn test_capturing_a1_rook_loses_castling_priviledges_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G7, G6, Flag::None))
@@ -1008,7 +1008,7 @@ mod tests {
     }
 
     #[test]
-    fn test_capturing_h8_rook_loses_castling_priviledges_black() -> Result<(), BoardError> {
+    fn test_capturing_h8_rook_loses_castling_priviledges_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(B2, B3, Flag::None))
             .make_move(Move::from_square(G7, G6, Flag::None))
@@ -1026,7 +1026,7 @@ mod tests {
     }
 
     #[test]
-    fn test_capturing_a8_rook_loses_castling_priviledges_black() -> Result<(), BoardError> {
+    fn test_capturing_a8_rook_loses_castling_priviledges_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G2, G3, Flag::None))
             .make_move(Move::from_square(B7, B6, Flag::None))
@@ -1044,7 +1044,7 @@ mod tests {
     }
 
     #[test]
-    fn test_board_state_after_kingside_castling_white() -> Result<(), BoardError> {
+    fn test_board_state_after_kingside_castling_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -1070,7 +1070,7 @@ mod tests {
     }
 
     #[test]
-    fn test_board_state_after_kingside_castling_black() -> Result<(), BoardError> {
+    fn test_board_state_after_kingside_castling_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -1097,7 +1097,7 @@ mod tests {
     }
 
     #[test]
-    fn test_board_state_after_queenside_castling_white() -> Result<(), BoardError> {
+    fn test_board_state_after_queenside_castling_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -1125,7 +1125,7 @@ mod tests {
     }
 
     #[test]
-    fn test_board_state_after_queenside_castling_black() -> Result<(), BoardError> {
+    fn test_board_state_after_queenside_castling_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -1154,7 +1154,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_simple_piece_move_white() -> Result<(), BoardError> {
+    fn test_unmake_simple_piece_move_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .try_into()?;
@@ -1168,7 +1168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_simple_piece_move_black() -> Result<(), BoardError> {
+    fn test_unmake_simple_piece_move_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1186,7 +1186,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_capture_white() -> Result<(), BoardError> {
+    fn test_unmake_capture_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1210,7 +1210,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_capture_black() -> Result<(), BoardError> {
+    fn test_unmake_capture_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1236,7 +1236,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_en_passant_capture_white() -> Result<(), BoardError> {
+    fn test_unmake_en_passant_capture_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -1260,7 +1260,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_en_passant_capture_black() -> Result<(), BoardError> {
+    fn test_unmake_en_passant_capture_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1286,7 +1286,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_capture_with_promotion_white() -> Result<(), BoardError> {
+    fn test_unmake_capture_with_promotion_white() -> Result<()> {
         let mut board: Board = BoardBuilder::default()
             .piece(G1, King, White)
             .piece(E7, Pawn, White)
@@ -1310,7 +1310,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_pawn_promotion_white() -> Result<(), BoardError> {
+    fn test_unmake_pawn_promotion_white() -> Result<()> {
         let mut board: Board = BoardBuilder::default()
             .piece(G1, King, White)
             .piece(E7, Pawn, White)
@@ -1332,7 +1332,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_pawn_promotion_black() -> Result<(), BoardError> {
+    fn test_unmake_pawn_promotion_black() -> Result<()> {
         let mut board: Board = BoardBuilder::default()
             .piece(G1, King, White)
             .piece(E2, Pawn, Black)
@@ -1356,7 +1356,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_capture_with_promotion_black() -> Result<(), BoardError> {
+    fn test_unmake_capture_with_promotion_black() -> Result<()> {
         let mut board: Board = BoardBuilder::default()
             .piece(G1, King, White)
             .piece(E2, Pawn, Black)
@@ -1382,7 +1382,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_kingside_castle_white() -> Result<(), BoardError> {
+    fn test_unmake_kingside_castle_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -1410,7 +1410,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_kingside_castle_black() -> Result<(), BoardError> {
+    fn test_unmake_kingside_castle_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -1440,7 +1440,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_queenside_castling_white() -> Result<(), BoardError> {
+    fn test_unmake_queenside_castling_white() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -1472,7 +1472,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unmake_queenside_castling_black() -> Result<(), BoardError> {
+    fn test_unmake_queenside_castling_black() -> Result<()> {
         let mut board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
