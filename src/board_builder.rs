@@ -1,8 +1,8 @@
 use crate::board::{Board, BoardState};
-use crate::errors::BoardError;
 use crate::move_generation::Move;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
+use anyhow::{anyhow, bail, Result};
 use std::collections::HashSet;
 
 pub struct BoardBuilder {
@@ -74,7 +74,7 @@ impl BoardBuilder {
         self
     }
 
-    pub fn try_from_fen(fen: &str) -> Result<Board, BoardError> {
+    pub fn try_from_fen(fen: &str) -> Result<Board> {
         // 0: board arrangement
         // 1: active color
         // 2: Castling availability
@@ -109,7 +109,7 @@ impl BoardBuilder {
                         'q' => (Piece::Queen, Color::Black),
                         'K' => (Piece::King, Color::White),
                         'k' => (Piece::King, Color::Black),
-                        _ => Err(BoardError::new("invalid piece symbol in FEN"))?,
+                        _ => bail!("invalid piece symbol in FEN"),
                     };
 
                     let index = rank * 8 + file as usize;
@@ -125,9 +125,7 @@ impl BoardBuilder {
             "w" => Color::White,
             "b" => Color::Black,
             _ => {
-                return Err(BoardError::new(
-                    "failed to parse active board color, must be 'b' or 'w'.",
-                ))
+                bail!("failed to parse active board color, must be 'b' or 'w'.",)
             }
         };
 
@@ -135,18 +133,18 @@ impl BoardBuilder {
             ['K', 'Q', 'k', 'q', '-'].iter().cloned().collect();
         let castling_rights: HashSet<char> = fen_string_fields[2].chars().collect();
         if !castling_rights.is_subset(&valid_casting_right_chars) {
-            return Err(BoardError::new(
+            bail!(
                 "invalid castling rights in fen, must be a combination of 'K', 'Q', 'k', and 'q' or '-'",
-            ));
+            );
         }
 
         let half_move_clock: u32 = fen_string_fields[4]
             .parse()
-            .map_err(|_| BoardError::new("failed to parse half move clock from fen"))?;
+            .map_err(|_| anyhow!("failed to parse half move clock from fen"))?;
 
         let full_move_number: u32 = fen_string_fields[5]
             .parse()
-            .map_err(|_| BoardError::new("failed to parse full move number from fen"))?;
+            .map_err(|_| anyhow!("failed to parse full move number from fen"))?;
 
         Ok(Board {
             squares,
@@ -166,7 +164,7 @@ impl BoardBuilder {
         })
     }
 
-    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>, BoardError> {
+    fn parse_en_passant_square(en_passant_sqaure_field: &str) -> Result<Option<usize>> {
         if en_passant_sqaure_field == "-" {
             return Ok(None);
         }
@@ -178,7 +176,7 @@ impl BoardBuilder {
 }
 
 impl TryInto<Board> for BoardBuilder {
-    type Error = BoardError;
+    type Error = anyhow::Error;
     fn try_into(self) -> Result<Board, Self::Error> {
         // TODO: Add checks for invalid board states
         Ok(self.board)

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use std::sync::atomic::Ordering;
 
 use crate::{
@@ -26,7 +27,7 @@ impl Game {
         fen: &str,
         player_color: Option<Color>,
         engine_search_depth: u32,
-    ) -> Result<Self, BoardError> {
+    ) -> Result<Self> {
         let board = BoardBuilder::try_from_fen(fen)?;
 
         Ok(Self {

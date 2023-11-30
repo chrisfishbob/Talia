@@ -734,13 +734,13 @@ impl MoveGenerator {
 mod tests {
     use crate::board::Board;
     use crate::board_builder::BoardBuilder;
-    use crate::errors::BoardError;
     use crate::move_generation::{Flag, Move, MoveGenerator};
     use crate::piece::{Color::*, Piece::*};
     use crate::square::Square::*;
+    use anyhow::Result;
 
     #[test]
-    fn test_move_generation_depth_1() -> Result<(), BoardError> {
+    fn test_move_generation_depth_1() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(1);
@@ -751,7 +751,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_depth_2() -> Result<(), BoardError> {
+    fn test_move_generation_depth_2() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(2);
@@ -762,7 +762,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_depth_3() -> Result<(), BoardError> {
+    fn test_move_generation_depth_3() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(3);
@@ -773,7 +773,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_depth_4() -> Result<(), BoardError> {
+    fn test_move_generation_depth_4() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(4);
@@ -785,7 +785,7 @@ mod tests {
 
     #[ignore] // Too expensive. Run with cargo test -- --ignored
     #[test]
-    fn test_move_generation_depth_5() -> Result<(), BoardError> {
+    fn test_move_generation_depth_5() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(5);
@@ -797,7 +797,7 @@ mod tests {
 
     #[ignore] // Too expensive. Run with cargo test -- --ignored
     #[test]
-    fn test_move_generation_depth_6() -> Result<(), BoardError> {
+    fn test_move_generation_depth_6() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let number_of_positions = move_generator.perft_test(6);
@@ -808,7 +808,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_kiwipete_depth_1() -> Result<(), BoardError> {
+    fn test_move_generation_kiwipete_depth_1() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         )?;
@@ -821,7 +821,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_kiwipete_depth_2() -> Result<(), BoardError> {
+    fn test_move_generation_kiwipete_depth_2() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         )?;
@@ -834,7 +834,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_kiwipete_depth_3() -> Result<(), BoardError> {
+    fn test_move_generation_kiwipete_depth_3() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         )?;
@@ -847,7 +847,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_kiwipete_depth_4() -> Result<(), BoardError> {
+    fn test_move_generation_kiwipete_depth_4() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1",
         )?;
@@ -860,7 +860,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_tricky_position_depth_1() -> Result<(), BoardError> {
+    fn test_move_generation_tricky_position_depth_1() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8",
         )?;
@@ -873,7 +873,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_tricky_position_depth_2() -> Result<(), BoardError> {
+    fn test_move_generation_tricky_position_depth_2() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
         )?;
@@ -886,7 +886,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_tricky_position_depth_3() -> Result<(), BoardError> {
+    fn test_move_generation_tricky_position_depth_3() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
         )?;
@@ -899,7 +899,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_tricky_position_depth_4() -> Result<(), BoardError> {
+    fn test_move_generation_tricky_position_depth_4() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
         )?;
@@ -914,7 +914,7 @@ mod tests {
 
     #[ignore] // Too expensive. Run with cargo test -- --ignored
     #[test]
-    fn test_move_generation_tricky_position_depth_5() -> Result<(), BoardError> {
+    fn test_move_generation_tricky_position_depth_5() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8  ",
         )?;
@@ -928,7 +928,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_edwards_perft_depth_1() -> Result<(), BoardError> {
+    fn test_move_generation_edwards_perft_depth_1() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
         )?;
@@ -942,7 +942,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_edwards_perft_depth_2() -> Result<(), BoardError> {
+    fn test_move_generation_edwards_perft_depth_2() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
         )?;
@@ -956,7 +956,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_edwards_perft_depth_3() -> Result<(), BoardError> {
+    fn test_move_generation_edwards_perft_depth_3() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
         )?;
@@ -970,7 +970,7 @@ mod tests {
     }
 
     #[test]
-    fn test_move_generation_edwards_perft_depth_4() -> Result<(), BoardError> {
+    fn test_move_generation_edwards_perft_depth_4() -> Result<()> {
         let board = BoardBuilder::try_from_fen(
             "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10 ",
         )?;
@@ -1033,7 +1033,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_sliding_moves_empty_black() -> Result<(), BoardError> {
+    fn test_generate_sliding_moves_empty_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .try_into()?;
@@ -1051,7 +1051,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_sliding_moves_from_e4_e5() -> Result<(), BoardError> {
+    fn test_generate_sliding_moves_from_e4_e5() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::None))
@@ -1080,7 +1080,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_sliding_moves_from_e4_e5_nf3() -> Result<(), BoardError> {
+    fn test_generate_sliding_moves_from_e4_e5_nf3() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::None))
@@ -1111,7 +1111,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_sliding_moves_from_e4_e5_nf3_nc6() -> Result<(), BoardError> {
+    fn test_generate_sliding_moves_from_e4_e5_nf3_nc6() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::None))
@@ -1141,7 +1141,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_sliding_moves_from_corner() -> Result<(), BoardError> {
+    fn test_generate_sliding_moves_from_corner() -> Result<()> {
         let board = BoardBuilder::try_from_fen("Qr5k/r7/2N5/8/8/8/8/6K1 w - - 0 1")?;
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = Vec::new();
@@ -1172,7 +1172,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_knight_moves_from_corner() -> Result<(), BoardError> {
+    fn test_generate_knight_moves_from_corner() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(A1, King, White)
             .piece(A1, King, White)
@@ -1193,7 +1193,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_knight_moves_from_near_corner() -> Result<(), BoardError> {
+    fn test_generate_knight_moves_from_near_corner() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(A1, King, White)
             .piece(A1, King, White)
@@ -1216,7 +1216,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_knight_moves_with_pieces_on_target_square() -> Result<(), BoardError> {
+    fn test_generate_knight_moves_with_pieces_on_target_square() -> Result<()> {
         let board = BoardBuilder::try_from_fen("k7/3R1n2/2n3R1/4N3/2R3n1/3n1R2/8/KR6 w - - 0 1")?;
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = Vec::new();
@@ -1265,7 +1265,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_pawn_moves_from_starting_position_black() -> Result<(), BoardError> {
+    fn test_generate_pawn_moves_from_starting_position_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .try_into()?;
@@ -1304,7 +1304,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_move_with_piece_blocking_white() -> Result<(), BoardError> {
+    fn test_pawn_move_with_piece_blocking_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1328,7 +1328,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_move_with_piece_blocking_black() -> Result<(), BoardError> {
+    fn test_pawn_move_with_piece_blocking_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1353,7 +1353,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_with_second_rank_blocked_white() -> Result<(), BoardError> {
+    fn test_pawn_with_second_rank_blocked_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1372,7 +1372,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_with_second_rank_blocked_black() -> Result<(), BoardError> {
+    fn test_pawn_with_second_rank_blocked_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1393,7 +1393,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_both_captures_in_center_white() -> Result<(), BoardError> {
+    fn test_pawn_both_captures_in_center_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1415,7 +1415,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_both_captures_in_center_black() -> Result<(), BoardError> {
+    fn test_pawn_both_captures_in_center_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1439,7 +1439,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_no_pacman_white() -> Result<(), BoardError> {
+    fn test_pawn_no_pacman_white() -> Result<()> {
         // If pacman behavior exists, a capture offset of 9 for a pawn at the
         // 7th file will result in a square in the 0th file to become the target
         // square.
@@ -1465,7 +1465,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_no_pacman_black() -> Result<(), BoardError> {
+    fn test_pawn_no_pacman_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1489,7 +1489,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_no_anti_pacman_white() -> Result<(), BoardError> {
+    fn test_pawn_no_anti_pacman_white() -> Result<()> {
         // If anti-pacman behavior exists, a capture offset for a pawn at the 0th
         // file will result in the square on the 8th file on the same rank to become
         // the target square.
@@ -1513,7 +1513,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_no_anti_pacman_black() -> Result<(), BoardError> {
+    fn test_pawn_no_anti_pacman_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1534,7 +1534,7 @@ mod tests {
     }
 
     #[test]
-    fn test_already_moved_pawn_white() -> Result<(), BoardError> {
+    fn test_already_moved_pawn_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::None))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -1552,7 +1552,7 @@ mod tests {
     }
 
     #[test]
-    fn test_already_moved_pawn_black() -> Result<(), BoardError> {
+    fn test_already_moved_pawn_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(H2, H4, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::None))
@@ -1571,7 +1571,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_capture_index_no_overflow() -> Result<(), BoardError> {
+    fn test_pawn_capture_index_no_overflow() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H7, Pawn, White)
             .piece(E1, King, White)
@@ -1593,7 +1593,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pawn_capture_index_no_underflow() -> Result<(), BoardError> {
+    fn test_pawn_capture_index_no_underflow() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(A2, Pawn, Black)
             .piece(E1, King, White)
@@ -1616,7 +1616,7 @@ mod tests {
     }
 
     #[test]
-    fn test_promotion_pawn_move_white() -> Result<(), BoardError> {
+    fn test_promotion_pawn_move_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1638,7 +1638,7 @@ mod tests {
     }
 
     #[test]
-    fn test_promotion_pawn_move_black() -> Result<(), BoardError> {
+    fn test_promotion_pawn_move_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1661,7 +1661,7 @@ mod tests {
     }
 
     #[test]
-    fn test_promotion_pawn_capture_with_promotion_white() -> Result<(), BoardError> {
+    fn test_promotion_pawn_capture_with_promotion_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1701,7 +1701,7 @@ mod tests {
     }
 
     #[test]
-    fn test_promotion_pawn_capture_with_promotion_black() -> Result<(), BoardError> {
+    fn test_promotion_pawn_capture_with_promotion_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -1741,7 +1741,7 @@ mod tests {
     }
 
     #[test]
-    fn test_white_en_passant_capture_left_in_center() -> Result<(), BoardError> {
+    fn test_white_en_passant_capture_left_in_center() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -1763,7 +1763,7 @@ mod tests {
     }
 
     #[test]
-    fn test_white_en_passant_capture_right_in_center() -> Result<(), BoardError> {
+    fn test_white_en_passant_capture_right_in_center() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(B8, C6, Flag::None))
@@ -1784,7 +1784,7 @@ mod tests {
     }
 
     #[test]
-    fn test_black_en_passant_capture_right_in_center() -> Result<(), BoardError> {
+    fn test_black_en_passant_capture_right_in_center() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1807,7 +1807,7 @@ mod tests {
     }
 
     #[test]
-    fn test_black_en_passant_capture_left_in_center() -> Result<(), BoardError> {
+    fn test_black_en_passant_capture_left_in_center() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, H3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -1828,7 +1828,7 @@ mod tests {
     }
 
     #[test]
-    fn test_white_en_passant_capture_right_on_a_file() -> Result<(), BoardError> {
+    fn test_white_en_passant_capture_right_on_a_file() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(A2, A4, Flag::PawnDoublePush))
             .make_move(Move::from_square(B8, C6, Flag::None))
@@ -1848,7 +1848,7 @@ mod tests {
     }
 
     #[test]
-    fn test_white_en_passant_capture_left_on_h_file() -> Result<(), BoardError> {
+    fn test_white_en_passant_capture_left_on_h_file() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(H2, H4, Flag::PawnDoublePush))
             .make_move(Move::from_square(B8, C6, Flag::None))
@@ -1868,7 +1868,7 @@ mod tests {
     }
 
     #[test]
-    fn test_black_en_passant_capture_left_on_a_file() -> Result<(), BoardError> {
+    fn test_black_en_passant_capture_left_on_a_file() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(A7, A5, Flag::PawnDoublePush))
@@ -1889,7 +1889,7 @@ mod tests {
     }
 
     #[test]
-    fn test_black_en_passant_capture_right_on_h_file() -> Result<(), BoardError> {
+    fn test_black_en_passant_capture_right_on_h_file() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(H7, H5, Flag::PawnDoublePush))
@@ -1910,7 +1910,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_white() -> Result<(), BoardError> {
+    fn test_basic_king_movement_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, White)
             .piece(E8, King, Black)
@@ -1936,7 +1936,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_with_blocking_same_color_pieces_white() -> Result<(), BoardError> {
+    fn test_basic_king_movement_with_blocking_same_color_pieces_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, White)
             .piece(E8, King, Black)
@@ -1962,7 +1962,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_with_captures_white() -> Result<(), BoardError> {
+    fn test_basic_king_movement_with_captures_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, White)
             .piece(E8, King, Black)
@@ -1990,7 +1990,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_black() -> Result<(), BoardError> {
+    fn test_basic_king_movement_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, Black)
             .piece(E1, King, White)
@@ -2016,7 +2016,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_with_blocking_same_color_pieces_black() -> Result<(), BoardError> {
+    fn test_basic_king_movement_with_blocking_same_color_pieces_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, Black)
             .piece(E1, King, White)
@@ -2042,7 +2042,7 @@ mod tests {
     }
 
     #[test]
-    fn test_basic_king_movement_with_captures_black() -> Result<(), BoardError> {
+    fn test_basic_king_movement_with_captures_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(E4, King, Black)
             .piece(E1, King, White)
@@ -2070,7 +2070,7 @@ mod tests {
     }
 
     #[test]
-    fn test_king_basic_movement_no_pacman_h_file_white() -> Result<(), BoardError> {
+    fn test_king_basic_movement_no_pacman_h_file_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -2091,7 +2091,7 @@ mod tests {
     }
 
     #[test]
-    fn test_king_basic_movement_no_pacman_a_file_white() -> Result<(), BoardError> {
+    fn test_king_basic_movement_no_pacman_a_file_white() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(A1, King, White)
             .piece(H8, King, Black)
@@ -2112,7 +2112,7 @@ mod tests {
     }
 
     #[test]
-    fn test_king_basic_movement_no_pacman_h_file_black() -> Result<(), BoardError> {
+    fn test_king_basic_movement_no_pacman_h_file_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(H1, King, White)
             .piece(H8, King, Black)
@@ -2134,7 +2134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_king_basic_movement_no_pacman_a_file_black() -> Result<(), BoardError> {
+    fn test_king_basic_movement_no_pacman_a_file_black() -> Result<()> {
         let board = BoardBuilder::new()
             .piece(A1, King, White)
             .piece(A8, King, Black)
@@ -2156,7 +2156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_starting_position_white() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_starting_position_white() -> Result<()> {
         let board = Board::starting_position();
 
         let move_generator = MoveGenerator::new(board);
@@ -2167,7 +2167,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_white_true() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_white_true() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2185,7 +2185,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_blocked_white() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_blocked_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2201,7 +2201,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_starting_position_black() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_starting_position_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .try_into()?;
@@ -2214,7 +2214,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_black_true() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_black_true() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2233,7 +2233,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_kingside_castle_blocked_black() -> Result<(), BoardError> {
+    fn test_can_kingside_castle_blocked_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2250,7 +2250,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kingside_castle_white() -> Result<(), BoardError> {
+    fn test_kingside_castle_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -2273,7 +2273,7 @@ mod tests {
     }
 
     #[test]
-    fn test_queenside_castle_white() -> Result<(), BoardError> {
+    fn test_queenside_castle_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -2297,7 +2297,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kingside_castle_black() -> Result<(), BoardError> {
+    fn test_kingside_castle_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -2322,7 +2322,7 @@ mod tests {
     }
 
     #[test]
-    fn test_queenside_castle_black() -> Result<(), BoardError> {
+    fn test_queenside_castle_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(D2, D4, Flag::PawnDoublePush))
             .make_move(Move::from_square(D7, D6, Flag::PawnDoublePush))
@@ -2348,7 +2348,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_moves_starting_position_white() -> Result<(), BoardError> {
+    fn test_generate_moves_starting_position_white() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position().try_into()?;
 
         let mut move_generator = MoveGenerator::new(board);
@@ -2360,7 +2360,7 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_moves_starting_position_black() -> Result<(), BoardError> {
+    fn test_generate_moves_starting_position_black() -> Result<()> {
         let board: Board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .try_into()?;
@@ -2374,7 +2374,7 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_opponent_attack_squares_from_white() -> Result<(), BoardError> {
+    fn test_calculate_opponent_attack_squares_from_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position().try_into()?;
         let mut move_generator = MoveGenerator::new(board);
         let attacked_squares = move_generator.calculate_opponent_attack_map();
@@ -2389,7 +2389,7 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_opponent_attack_squares_from_black() -> Result<(), BoardError> {
+    fn test_calculate_opponent_attack_squares_from_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .try_into()?;
@@ -2407,7 +2407,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_kingside_castling_path_clear_true_white() -> Result<(), BoardError> {
+    fn test_is_kingside_castling_path_clear_true_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2428,7 +2428,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_kingside_castling_path_clear_true_black() -> Result<(), BoardError> {
+    fn test_is_kingside_castling_path_clear_true_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(E7, E6, Flag::PawnDoublePush))
@@ -2450,7 +2450,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_kingside_castling_path_clear_f1_attacked_white() -> Result<(), BoardError> {
+    fn test_is_kingside_castling_path_clear_f1_attacked_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))
@@ -2472,7 +2472,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_kingside_castling_path_clear_f8_attacked_black() -> Result<(), BoardError> {
+    fn test_is_kingside_castling_path_clear_f8_attacked_black() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(G1, F3, Flag::None))
             .make_move(Move::from_square(E7, E5, Flag::PawnDoublePush))
@@ -2495,7 +2495,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_kingside_castling_path_clear_king_in_check_white() -> Result<(), BoardError> {
+    fn test_is_kingside_castling_path_clear_king_in_check_white() -> Result<()> {
         let board = BoardBuilder::from_starting_position()
             .make_move(Move::from_square(E2, E4, Flag::PawnDoublePush))
             .make_move(Move::from_square(G8, F6, Flag::None))

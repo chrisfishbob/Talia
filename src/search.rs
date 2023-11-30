@@ -259,17 +259,17 @@ mod tests {
     use crate::{
         board::Board,
         board_builder::BoardBuilder,
-        errors::BoardError,
         move_generation::{Flag, Move, MoveGenerator},
         piece::{Color, Piece},
         search::INF,
         square::Square,
     };
+    use anyhow::Result;
 
     use super::find_best_move;
 
     #[test]
-    fn test_find_best_move_mate_in_one() -> Result<(), BoardError> {
+    fn test_find_best_move_mate_in_one() -> Result<()> {
         let board: Board = BoardBuilder::new()
             .piece(Square::H1, Piece::King, Color::White)
             .piece(Square::H3, Piece::King, Color::Black)
@@ -289,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn test_find_best_move_mate_in_one_v2() -> Result<(), BoardError> {
+    fn test_find_best_move_mate_in_one_v2() -> Result<()> {
         // Talia used to get stuck sometimes when it sees checkmate and starts playing
         // slack moves. This tests that she takes the most efficient mate.
         let board: Board = BoardBuilder::try_from_fen("k6r/2p3pp/4p3/4P3/7q/8/5r2/3K4 b - - 1 41")?;
@@ -305,7 +305,7 @@ mod tests {
 
     // TODO: Come back and fix the mating depth logic
     // #[test]
-    // fn test_find_best_move_mate_in_two() -> Result<(), BoardError> {
+    // fn test_find_best_move_mate_in_two() -> Result<()> {
     //     let board: Board = BoardBuilder::try_from_fen("k6r/2p2ppp/4P3/4P3/8/1r6/4KP1P/2q5 b - - 0 36")?;
     //     let mut move_generator = MoveGenerator::new(board);
     //     let mut moves = move_generator.generate_moves();
@@ -319,7 +319,7 @@ mod tests {
     // }
 
     #[test]
-    fn test_captures_handing_queen() -> Result<(), BoardError> {
+    fn test_captures_handing_queen() -> Result<()> {
         let board: Board = BoardBuilder::new()
             .piece(Square::H1, Piece::King, Color::White)
             .piece(Square::A8, Piece::King, Color::Black)
@@ -339,7 +339,7 @@ mod tests {
     }
 
     #[test]
-    fn test_pins_queen_to_king() -> Result<(), BoardError> {
+    fn test_pins_queen_to_king() -> Result<()> {
         let board: Board = BoardBuilder::new()
             .piece(Square::F1, Piece::King, Color::White)
             .piece(Square::E8, Piece::King, Color::Black)
@@ -359,7 +359,7 @@ mod tests {
     }
 
     #[test]
-    fn test_forks_king_and_queen() -> Result<(), BoardError> {
+    fn test_forks_king_and_queen() -> Result<()> {
         let board: Board = BoardBuilder::new()
             .piece(Square::F1, Piece::King, Color::White)
             .piece(Square::C4, Piece::King, Color::Black)
