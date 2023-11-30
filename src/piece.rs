@@ -18,7 +18,7 @@ const PIECE_VALUE_TABLE: [i32; 6] = [
     325, // Bishop
     500, // Rook
     900, // Queen
-    0, // King (not included in material count)
+    0,   // King (not included in material count)
 ];
 
 impl Piece {

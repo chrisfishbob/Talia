@@ -8,7 +8,10 @@ use crate::{
     move_generation::{Flag, Move, MoveGenerator},
 };
 
-const INF: i32 = i32::MAX;
+const MAX_DEPTH: i32 = 100;
+// Subtract MAX_DEPTH from INF to leave space to differentiate
+// mating moves with DTM
+const INF: i32 = i32::MAX - MAX_DEPTH;
 pub static COUNTER: AtomicI32 = AtomicI32::new(0);
 
 #[allow(unused)]
@@ -55,7 +58,7 @@ impl TablebaseResponse {
 
         for mv in &self.moves {
             match best_move.category {
-                // The category is from the opponent's perspective. So a loss is good 
+                // The category is from the opponent's perspective. So a loss is good
                 Category::Win => {
                     if mv.category == Category::Draw || mv.category == Category::Loss {
                         best_move = mv
@@ -87,7 +90,9 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, be
     let mut moves = move_generator.generate_moves();
     if moves.is_empty() {
         if move_generator.is_in_check(move_generator.board.to_move) {
-            return -INF;
+            // Prefer getting mated later rather than sooner; high depth
+            // remaining is worse than low depth remaining
+            return -INF - depth as i32;
         } else {
             return 0;
         }
@@ -278,6 +283,22 @@ mod tests {
 
         assert!(best_move == mating_move);
         assert!(eval == INF);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_find_best_move_mate_in_one_v2() -> Result<(), BoardError> {
+        // Talia used to get stuck sometimes when it sees checkmate and starts playing
+        // slack moves. This tests that she takes the most efficient mate.
+        let board: Board = BoardBuilder::try_from_fen("k6r/2p3pp/4p3/4P3/7q/8/5r2/3K4 b - - 1 41")?;
+        let mut move_generator = MoveGenerator::new(board);
+        let mut moves = move_generator.generate_moves();
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
+        let expected_best_move = Move::from_square(Square::H4, Square::H1, Flag::None);
+
+        dbg!(&best_move);
+        assert!(best_move == expected_best_move);
 
         Ok(())
     }
