@@ -1,7 +1,7 @@
+use anyhow::{anyhow, bail, Result};
 use core::fmt;
 
 use crate::board::Board;
-use crate::errors::BoardError;
 use crate::piece::{Color, Piece};
 use crate::square::Square;
 
@@ -32,14 +32,14 @@ impl Move {
     pub fn try_from_algebraic_notation(
         algebraic_notation: &str,
         move_generator: &mut MoveGenerator,
-    ) -> Result<Self, BoardError> {
+    ) -> Result<Self> {
         let promotion_piece = match algebraic_notation.chars().nth(4) {
             Some('q') => Some(Piece::Queen),
             Some('r') => Some(Piece::Rook),
             Some('n') => Some(Piece::Knight),
             Some('b') => Some(Piece::Bishop),
             None => None,
-            _ => Err(BoardError::new("Not a known promotion piece of q, r, n or b"))?,
+            _ => bail!("Not a known promotion piece of q, r, n or b"),
         };
 
         let starting_square =
@@ -54,7 +54,7 @@ impl Move {
                 .find(|mv| {
                     mv.starting_square == starting_square && mv.target_square == target_square
                 })
-                .ok_or(BoardError::new("Not a legal move")),
+                .ok_or(anyhow!("Not a legal move")),
             Some(promotion_piece) => moves
                 .into_iter()
                 .find(|mv| {
@@ -68,7 +68,7 @@ impl Move {
                             _ => false,
                         }
                 })
-                .ok_or(BoardError::new("Not a legal move")),
+                .ok_or(anyhow!("Not a legal move")),
         }
     }
 }
