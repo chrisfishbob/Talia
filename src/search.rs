@@ -92,6 +92,7 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, be
         if move_generator.is_in_check(move_generator.board.to_move) {
             // Prefer getting mated later rather than sooner; high depth
             // remaining is worse than low depth remaining
+            // BUG: This breaks when evaluation is inverted in child nodes
             return -INF - depth as i32;
         } else {
             return 0;
@@ -297,11 +298,25 @@ mod tests {
         let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
         let expected_best_move = Move::from_square(Square::H4, Square::H1, Flag::None);
 
-        dbg!(&best_move);
         assert!(best_move == expected_best_move);
 
         Ok(())
     }
+
+    // TODO: Come back and fix the mating depth logic
+    // #[test]
+    // fn test_find_best_move_mate_in_two() -> Result<(), BoardError> {
+    //     let board: Board = BoardBuilder::try_from_fen("k6r/2p2ppp/4P3/4P3/8/1r6/4KP1P/2q5 b - - 0 36")?;
+    //     let mut move_generator = MoveGenerator::new(board);
+    //     let mut moves = move_generator.generate_moves();
+    //     let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
+    //     // The only mate in two move
+    //     let expected_best_move = Move::from_square(Square::H8, Square::D8, Flag::None);
+
+    //     assert!(best_move == expected_best_move);
+
+    //     Ok(())
+    // }
 
     #[test]
     fn test_captures_handing_queen() -> Result<(), BoardError> {
