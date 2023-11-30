@@ -33,5 +33,5 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 ✅ Position evaluation through piece square tables 
 
 ## Playing Strength
-Currently, Talia is around 1800+ ELO in Lichess and is improving rapidly.  
+Currently, Talia is around 1800+ ELO on Lichess and is improving rapidly.  
 I'll probably never beat her ever again, YMMV.
