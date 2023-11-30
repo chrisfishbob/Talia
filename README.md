@@ -3,6 +3,68 @@
 ## Overview
 Talia is a UCI-compliant, thoroughly tested chess engine written from the ground up in Rust.
 
+
+## Instructions
+### Terminal
+To play a game against Talia in the terminal, simply run `cargo run --release`.  
+***!Do not forget the release flag!***  
+Moves can be inputted via UCI notation, which is simply the start square immediately followed
+by the target square.
+```
+Talia Chess Engine: v1.1.0
+
+8  ['r', 'n', 'b', 'q', 'k', 'b', 'n', 'r']
+
+7  ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p']
+
+6  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+5  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+4  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+3  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+2  ['P', 'P', 'P', 'P', 'P', 'P', 'P', 'P']
+
+1  ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+
+     A    B    C    D    E    F    G    H
+
+White to move.
+
+e2e4
+
+Talia is thinking ...
+Talia thought for 604 milliseconds and evaluted 77218 positions at depth 6
+Best move: starting_square: B8, target_square: C6
+Eval: 35
+
+8  ['r', ' ', 'b', 'q', 'k', 'b', 'n', 'r']
+
+7  ['p', 'p', 'p', 'p', 'p', 'p', 'p', 'p']
+
+6  [' ', ' ', 'n', ' ', ' ', ' ', ' ', ' ']
+
+5  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+4  [' ', ' ', ' ', ' ', 'P', ' ', ' ', ' ']
+
+3  [' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ']
+
+2  ['P', 'P', 'P', 'P', ' ', 'P', 'P', 'P']
+
+1  ['R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R']
+
+     A    B    C    D    E    F    G    H
+
+White to move.
+
+```
+
+### GUI
+Interop with Chess GUIs and Lichess via the UCI protocol is underway and will be available soon.
+
 ## Progress
 
 ### Legal Move Generation Complete
