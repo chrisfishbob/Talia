@@ -1,3 +1,6 @@
+[profile.release]
+debug = true
+
 [package]
 name = "talia"
 version = "1.1.0"
