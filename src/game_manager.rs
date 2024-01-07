@@ -36,6 +36,7 @@ impl Game {
         })
     }
 
+    // A pretty scrappy function to play via the CLI while UCI protocol is underway
     pub fn start_game(&mut self) -> Result<()> {
         loop {
             let mut move_generator = MoveGenerator::new(self.board.clone());
@@ -105,6 +106,20 @@ impl Game {
                 }
                 self.board.move_piece(&best_move);
                 println!("Eval: {best_eval}")
+            }
+        }
+    }
+
+    pub fn start_uci(&mut self) -> Result<()> {
+        loop {
+            let input = self.get_uci_move_input();
+            let split_input: Vec<&str> = input.split_whitespace().collect();
+            match split_input.as_slice() {
+                ["uci"] => println!("uciok"),
+                ["ucinewgame"] => {}
+                ["isready"] => println!("readyok"),
+                ["position", _] => {}
+                _ => continue,
             }
         }
     }
