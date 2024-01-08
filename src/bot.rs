@@ -52,7 +52,8 @@ impl Bot {
                 Ok(())
             }
             ["position", "fen", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5, ..] => {
-                let full_fen_string = format!("{} {} {} {} {} {}", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5);
+                let full_fen_string =
+                    format!("{} {} {} {} {} {}", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5);
                 self.board = BoardBuilder::try_from_fen(&full_fen_string)?;
                 Ok(())
             }
@@ -69,7 +70,7 @@ impl Default for Bot {
 
 #[cfg(test)]
 mod tests {
-    use crate::{bot::Bot, board::Board};
+    use crate::{board::Board, bot::Bot};
 
     #[test]
     fn test_uci_command_position() {
@@ -92,7 +93,16 @@ mod tests {
     #[test]
     fn test_uci_command_position_with_fen() {
         let mut bot = Bot::new();
-        let command = ["position", "fen", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", "0", "1"];
+        let command = [
+            "position",
+            "fen",
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+            "w",
+            "KQkq",
+            "-",
+            "0",
+            "1",
+        ];
         bot.process_commands(&command).unwrap();
 
         assert!(bot.board.to_fen() == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
@@ -101,7 +111,18 @@ mod tests {
     #[test]
     fn test_uci_command_position_with_fen_and_moves() {
         let mut bot = Bot::new();
-        let command = ["position", "fen", "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR", "w", "KQkq", "-", "0", "1", "moves", "e2e4"];
+        let command = [
+            "position",
+            "fen",
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR",
+            "w",
+            "KQkq",
+            "-",
+            "0",
+            "1",
+            "moves",
+            "e2e4",
+        ];
         bot.process_commands(&command).unwrap();
 
         assert!(bot.board.to_fen() == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
