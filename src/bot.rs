@@ -1,4 +1,10 @@
-use crate::{board::Board, board_builder::BoardBuilder};
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+
+use crate::{
+    board::Board, board_builder::BoardBuilder, move_generation::MoveGenerator,
+    search::find_best_move,
+};
 use anyhow::{bail, Result};
 
 pub struct Bot {
@@ -17,7 +23,11 @@ impl Bot {
             let input = self.get_uci_move_input();
             let split_input: Vec<&str> = input.split_whitespace().collect();
             let commands = split_input.as_slice();
-            self.process_commands(commands)?;
+            self.log(&input);
+            if let Err(e) = self.process_commands(commands) {
+                self.log("Talia encountered a critical error");
+                self.log(&e.to_string());
+            }
         }
     }
 
@@ -32,10 +42,12 @@ impl Bot {
 
     fn process_commands(&mut self, commands: &[&str]) -> Result<()> {
         match commands {
-            ["uci"] => println!("uciok"),
-            ["ucinewgame"] => {}
-            ["isready"] => println!("readyok"),
+            ["uci"] => self.respond("uciok"),
+            ["isready"] => self.respond("readyok"),
             ["position", ..] => self.handle_position_command(commands)?,
+            ["go", ..] => self.handle_go_command(commands)?,
+            // TODO: Handle stop and quit once clock is implemented in searcher
+            ["ucinewgame"] | ["stop"] | ["quit"] => {}
             _ => bail!("unrecognized UCI command"),
         }
         Ok(())
@@ -59,6 +71,34 @@ impl Bot {
             }
             _ => bail!("position command is in an unknown format"),
         }
+    }
+
+    fn handle_go_command(&mut self, _go_command: &[&str]) -> Result<()> {
+        // TODO: Handle time and increments
+        let depth = 6;
+        let mut move_generator = MoveGenerator::new(self.board.clone());
+        let mut moves = move_generator.generate_moves();
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, depth);
+        self.board.move_piece(&best_move);
+
+        self.respond(&format!("bestmove {best_move}"));
+
+        Ok(())
+    }
+
+    fn respond(&self, data: &str) {
+        println!("{data}");
+        self.log(data);
+    }
+
+    fn log(&self, data: &str) {
+        let mut file = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("/tmp/talia.log")
+            .expect("Unable to open file");
+
+        writeln!(file, "{data}").expect("Unable to write to log file");
     }
 }
 

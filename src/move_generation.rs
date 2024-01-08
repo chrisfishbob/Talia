@@ -88,6 +88,19 @@ impl fmt::Debug for Move {
     }
 }
 
+impl fmt::Display for Move {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let output = format!(
+            "{:?}{:?}",
+            Square::from_index(self.starting_square),
+            Square::from_index(self.target_square)
+        )
+        .to_lowercase();
+        write!(f, "{output}",)?;
+        Ok(())
+    }
+}
+
 #[derive(Debug, Eq, PartialEq, Clone)]
 pub enum Flag {
     None,
