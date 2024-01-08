@@ -5,8 +5,15 @@ Talia is a UCI-compliant, thoroughly tested chess engine written from the ground
 
 
 ## Instructions
+### GUI
+Talia implements the Universal Chess Interface (UCI), so it is a drop-in replacement for any
+chess GUI that supports UCI.  
+To use Talia as your engine, compile it first with `cargo build --release` and select the `talia` executable
+as your engine in your Chess GUI.  
+(Note: Currently, only a subset of the interface is implemented, so not all UCI features will work)
+
 ### Terminal
-To play a game against Talia in the terminal, simply run `cargo run --release`.  
+To play a game against Talia in the terminal, simply run `cargo run --release -- --cli`.  
 ***!Do not forget the release flag!***  
 Moves can be inputted via UCI notation, which is simply the start square immediately followed
 by the target square.
