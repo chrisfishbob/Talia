@@ -69,9 +69,6 @@ White to move.
 
 ```
 
-### GUI
-Interop with Chess GUIs and Lichess via the UCI protocol is underway and will be available soon.
-
 ## Progress
 
 ### Legal Move Generation Complete
@@ -99,7 +96,8 @@ Interop with Chess GUIs and Lichess via the UCI protocol is underway and will be
 ✅ Position evaluation through material  
 ✅ Quiescence search  
 ✅ 7 piece Endgame syzygy tablebase  
-✅ Position evaluation through piece square tables 
+✅ Position evaluation through piece square tables  
+✅ Iterative deepening 
 
 ## Playing Strength
 Currently, Talia is around 1800+ ELO on Lichess and is improving rapidly.  
