@@ -170,7 +170,7 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
     };
 
     Ok((
-        Move::try_from_algebraic_notation(&best_move.uci, move_generator)?,
+        Move::try_from_uci(&best_move.uci, move_generator)?,
         eval,
     ))
 }

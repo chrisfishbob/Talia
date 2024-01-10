@@ -58,7 +58,7 @@ impl Game {
             {
                 println!("{}", self.board);
                 let input = self.get_uci_move_input();
-                match Move::try_from_algebraic_notation(&input, &mut move_generator) {
+                match Move::try_from_uci(&input, &mut move_generator) {
                     Ok(mv) => self.board.move_piece(&mv),
                     Err(error) => println!("{}", error),
                 }

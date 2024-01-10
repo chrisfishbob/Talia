@@ -2,7 +2,9 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 
 use crate::{
-    board::Board, board_builder::BoardBuilder, move_generation::MoveGenerator,
+    board::Board,
+    board_builder::BoardBuilder,
+    move_generation::{Move, MoveGenerator},
     search::find_best_move,
 };
 use anyhow::{bail, Result};
@@ -60,13 +62,29 @@ impl Bot {
         // Note: 'moves' section is optional
         // (Thanks Sebastian for figuring this out, so I don't have to read the specs <3)
         match pos_command {
-            ["position", "startpos", ..] => {
+            ["position", "startpos", "moves", moves @ ..] => {
+                self.board = Board::starting_position();
+                self.play_moves_on_board(moves);
+
+                Ok(())
+            }
+            ["position", "startpos"] => {
                 self.board = Board::starting_position();
                 Ok(())
             }
-            ["position", "fen", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5, ..] => {
+            ["position", "fen", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5, "moves", moves @ ..] => {
                 let full_fen_string =
                     format!("{} {} {} {} {} {}", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5);
+
+                self.board = BoardBuilder::try_from_fen(&full_fen_string)?;
+                self.play_moves_on_board(moves);
+
+                Ok(())
+            }
+            ["position", "fen", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5] => {
+                let full_fen_string =
+                    format!("{} {} {} {} {} {}", fen_0, fen_1, fen_2, fen_3, fen_4, fen_5);
+
                 self.board = BoardBuilder::try_from_fen(&full_fen_string)?;
                 Ok(())
             }
@@ -85,6 +103,15 @@ impl Bot {
         self.respond(&format!("bestmove {best_move}"));
 
         Ok(())
+    }
+
+    fn play_moves_on_board(&mut self, moves: &[&str]) {
+        for mv in moves {
+            // Need a move generator to check if the move is legal
+            let mut move_generator = MoveGenerator::new(self.board.clone());
+            let mv = Move::try_from_uci(mv, &mut move_generator).unwrap();
+            self.board.move_piece(&mv);
+        }
     }
 
     fn respond(&self, data: &str) {
@@ -111,7 +138,13 @@ impl Default for Bot {
 
 #[cfg(test)]
 mod tests {
-    use crate::{board::Board, bot::Bot};
+    use crate::{
+        board::Board,
+        board_builder::BoardBuilder,
+        bot::Bot,
+        move_generation::{Flag, Move},
+        square::Square,
+    };
 
     #[test]
     fn test_uci_command_position() {
@@ -128,7 +161,13 @@ mod tests {
         let command = ["position", "startpos", "moves", "e2e4", "e7e5"];
         bot.process_commands(&command).unwrap();
 
-        assert!(bot.board == Board::starting_position())
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .make_move(Move::from_square(Square::E7, Square::E5, Flag::PawnDoublePush))
+            .try_into()
+            .unwrap();
+
+        assert!(bot.board == expected_board)
     }
 
     #[test]
@@ -166,6 +205,11 @@ mod tests {
         ];
         bot.process_commands(&command).unwrap();
 
-        assert!(bot.board.to_fen() == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+        let expected_board: Board = BoardBuilder::from_starting_position()
+            .make_move(Move::from_square(Square::E2, Square::E4, Flag::PawnDoublePush))
+            .try_into()
+            .unwrap();
+
+        assert!(bot.board == expected_board);
     }
 }

@@ -29,7 +29,8 @@ impl Move {
         }
     }
 
-    pub fn try_from_algebraic_notation(
+    // TODO: 
+    pub fn try_from_uci(
         algebraic_notation: &str,
         move_generator: &mut MoveGenerator,
     ) -> Result<Self> {
