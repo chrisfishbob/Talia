@@ -92,8 +92,7 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, be
         if move_generator.is_in_check(move_generator.board.to_move) {
             // Prefer getting mated later rather than sooner; high depth
             // remaining is worse than low depth remaining
-            // BUG: This breaks when evaluation is inverted in child nodes
-            return -INF - depth as i32;
+            return -INF;
         } else {
             return 0;
         }
@@ -150,7 +149,6 @@ fn search_all_captures(move_generator: &mut MoveGenerator, alpha: i32, beta: i32
     alpha
 }
 
-// TODO: Use standard query rather than mainline
 pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)> {
     let base_tb_server_url = "http://tablebase.lichess.ovh/standard";
     // Make FEN URL friendly
@@ -203,20 +201,33 @@ pub fn find_best_move(
         .get(0)
         .expect("moves vector must have at least one move");
 
-    let mut alpha = -INF;
-    let beta = INF;
+    let mut best_eval = -INF;
+    // Iterative deepending
+    // TODO: Use previous iterations to optimize search
+    // TODO: Actually take account of the clock
+    for curr_depth in 0..depth {
+        let mut alpha = -INF;
+        let beta = INF;
 
-    for mv in moves.iter() {
-        move_generator.board.move_piece(mv);
-        let eval = -search(move_generator, depth - 1, -beta, -alpha);
-        move_generator.board.unmake_move(mv).unwrap();
-        if eval > alpha {
-            alpha = eval;
-            best_move = mv;
+        for mv in moves.iter() {
+            move_generator.board.move_piece(mv);
+            let eval = -search(move_generator, curr_depth, -beta, -alpha);
+            move_generator.board.unmake_move(mv).unwrap();
+            // If we see mate at the current depth, stop the search, since
+            // the current move is guarenteed to be the fastest mate
+            if eval == INF {
+                return (mv.clone(), eval);
+            }
+
+            if eval > alpha {
+                alpha = eval;
+                best_move = mv;
+                best_eval = eval;
+            }
         }
     }
 
-    (best_move.clone(), alpha)
+    (best_move.clone(), best_eval)
 }
 
 pub fn guess_move_score(move_generator: &MoveGenerator, mv: &Move) -> i32 {
@@ -297,20 +308,20 @@ mod tests {
         Ok(())
     }
 
-    // TODO: Come back and fix the mating depth logic
-    // #[test]
-    // fn test_find_best_move_mate_in_two() -> Result<()> {
-    //     let board: Board = BoardBuilder::try_from_fen("k6r/2p2ppp/4P3/4P3/8/1r6/4KP1P/2q5 b - - 0 36")?;
-    //     let mut move_generator = MoveGenerator::new(board);
-    //     let mut moves = move_generator.generate_moves();
-    //     let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
-    //     // The only mate in two move
-    //     let expected_best_move = Move::from_square(Square::H8, Square::D8, Flag::None);
+    #[test]
+    fn test_find_best_move_mate_in_two() -> Result<()> {
+        let board: Board =
+            BoardBuilder::try_from_fen("k6r/2p2ppp/4P3/4P3/8/1r6/4KP1P/2q5 b - - 0 36")?;
+        let mut move_generator = MoveGenerator::new(board);
+        let mut moves = move_generator.generate_moves();
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
+        // The only mate in two move
+        let expected_best_move = Move::from_square(Square::H8, Square::D8, Flag::None);
 
-    //     assert!(best_move == expected_best_move);
+        assert!(best_move == expected_best_move);
 
-    //     Ok(())
-    // }
+        Ok(())
+    }
 
     #[test]
     fn test_captures_handing_queen() -> Result<()> {
