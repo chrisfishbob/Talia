@@ -46,8 +46,9 @@ impl Bot {
             ["isready"] => self.respond("readyok"),
             ["position", ..] => self.handle_position_command(commands)?,
             ["go", ..] => self.handle_go_command(commands)?,
-            // TODO: Handle stop and quit once clock is implemented in searcher
-            ["ucinewgame"] | ["stop"] | ["quit"] => {}
+            // TODO: Handle stop once clock is implemented in searcher
+            ["ucinewgame"] | ["stop"] => {}
+            ["quit"] => std::process::exit(0),
             _ => bail!("unrecognized UCI command"),
         }
         Ok(())
