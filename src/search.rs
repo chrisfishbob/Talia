@@ -169,10 +169,7 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
         Category::Loss => INF,
     };
 
-    Ok((
-        Move::try_from_uci(&best_move.uci, move_generator)?,
-        eval,
-    ))
+    Ok((Move::try_from_uci(&best_move.uci, move_generator)?, eval))
 }
 
 pub fn find_best_move(
@@ -380,6 +377,26 @@ mod tests {
 
         assert!(best_move == forking_move);
 
+        Ok(())
+    }
+
+    #[test]
+    fn test_endgame_tablebase_promote() -> Result<()> {
+        let board: Board = BoardBuilder::new()
+            .piece(Square::A7, Piece::Pawn, Color::White)
+            .piece(Square::E1, Piece::King, Color::White)
+            .piece(Square::E8, Piece::King, Color::Black)
+            .to_move(Color::White)
+            .try_into()?;
+
+        let mut move_generator = MoveGenerator::new(board);
+        let mut moves = move_generator.generate_moves();
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 3);
+
+        assert!(
+            best_move == Move::from_square(Square::A7, Square::A8, Flag::PromoteTo(Piece::Queen))
+        );
+        println!("{best_move}");
         Ok(())
     }
 }

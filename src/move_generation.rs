@@ -29,7 +29,6 @@ impl Move {
         }
     }
 
-    // TODO: 
     pub fn try_from_uci(
         algebraic_notation: &str,
         move_generator: &mut MoveGenerator,
@@ -91,12 +90,20 @@ impl fmt::Debug for Move {
 
 impl fmt::Display for Move {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let output = format!(
+        let mut output = format!(
             "{:?}{:?}",
             Square::from_index(self.starting_square),
-            Square::from_index(self.target_square)
+            Square::from_index(self.target_square),
         )
         .to_lowercase();
+
+        match self.flag {
+            Flag::PromoteTo(piece) | Flag::CaptureWithPromotion(_, piece) => {
+                // Color::Black to get lowercase
+                output.push_str(piece.to_symbol(Color::Black).to_string().as_str())
+            }
+            _ => {}
+        }
         write!(f, "{output}",)?;
         Ok(())
     }
@@ -749,9 +756,49 @@ mod tests {
     use crate::board::Board;
     use crate::board_builder::BoardBuilder;
     use crate::move_generation::{Flag, Move, MoveGenerator};
-    use crate::piece::{Color::*, Piece::*};
-    use crate::square::Square::*;
+    use crate::piece::{
+        Color::*,
+        Piece::{self, *},
+    };
+    use crate::square::Square::{self, *};
     use anyhow::Result;
+
+    #[test]
+    fn test_move_uci_output() -> Result<()> {
+        let mv = Move::from_square(Square::E4, Square::E5, Flag::None);
+        let uci_output = format!("{mv}");
+
+        dbg!(&uci_output);
+        assert!(String::from("e4e5") == uci_output);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_uci_output_with_promotion() -> Result<()> {
+        let mv = Move::from_square(Square::E7, Square::E8, Flag::PromoteTo(Piece::Queen));
+        let uci_output = format!("{mv}");
+
+        dbg!(&uci_output);
+        assert!(String::from("e7e8q") == uci_output);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_move_uci_output_with_capture_with_promotion() -> Result<()> {
+        let mv = Move::from_square(
+            Square::E7,
+            Square::F8,
+            Flag::CaptureWithPromotion(Piece::Knight, Piece::Queen),
+        );
+        let uci_output = format!("{mv}");
+
+        dbg!(&uci_output);
+        assert!(String::from("e7f8q") == uci_output);
+
+        Ok(())
+    }
 
     #[test]
     fn test_move_generation_depth_1() -> Result<()> {
