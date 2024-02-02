@@ -524,93 +524,140 @@ impl MoveGenerator {
             .expect("could not find the king");
 
         let to_move = color_to_check.opposite_color();
-        for square in 0..64 {
-            if !self.board.colors[square].is_some_and(|color| color == to_move) {
+        if self.is_checked_by_knight(king_square, to_move)
+            || self.is_checked_by_pawn(king_square, to_move)
+            || self.is_checked_by_sliding_piece(king_square, to_move)
+            || self.is_checked_by_enemy_king(king_square)
+        {
+            return true;
+        }
+        false
+    }
+
+    fn is_checked_by_enemy_king(&self, king_square: usize) -> bool {
+        for offset in self.direction_offsets {
+            let potential_enemy_king_square = {
+                let tmp = king_square as isize + offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
+                tmp as usize
+            };
+
+            if Self::is_pacman_move(king_square, potential_enemy_king_square) {
                 continue;
             }
 
-            match self.board.squares[square].unwrap() {
-                Piece::Pawn => {
-                    let pawn_move_offsets = match self.board.to_move {
-                        Color::White => [8, 16, 7, 9],
-                        Color::Black => [-8, -16, -7, -9],
-                    };
+            if let Some(Piece::King) = self.board.squares[potential_enemy_king_square] {
+                return true;
+            }
+        }
 
-                    for capture_offset in &pawn_move_offsets[2..] {
-                        let target_square = {
-                            let tmp = square as isize + capture_offset;
-                            if !(0..64).contains(&tmp) {
-                                continue;
-                            }
-                            tmp as usize
-                        };
+        false
+    }
 
-                        if !Self::is_pacman_move(square, target_square)
-                            && target_square == king_square
-                        {
-                            return true;
-                        }
-                    }
+    fn is_checked_by_sliding_piece(&self, king_square: usize, to_move: Color) -> bool {
+        let color_to_check = to_move.opposite_color();
+
+        for direction_index in 0..8 {
+            for n in 0..self.num_squares_to_edge[king_square][direction_index] {
+                let direction_offset = self.direction_offsets[direction_index];
+                let potential_sliding_piece_square = (king_square as isize
+                    + self.direction_offsets[direction_index] * (n as isize + 1))
+                    as usize;
+
+                if self.board.colors[potential_sliding_piece_square].is_none() {
+                    continue;
                 }
-                Piece::King => {
-                    for offset in self.direction_offsets {
-                        let target_square = {
-                            let tmp = square as isize + offset;
-                            if !(0..64).contains(&tmp) {
-                                continue;
-                            }
-                            tmp as usize
-                        };
-
-                        if !Self::is_pacman_move(square, target_square)
-                            && target_square == king_square
-                        {
-                            return true;
-                        }
-                    }
+                // If blocked by friendly piece, just stop looking in this irection
+                if self.board.colors[potential_sliding_piece_square] == Some(color_to_check) {
+                    break;
                 }
-                Piece::Knight => {
-                    let knight_move_offsets = [-17, -15, -10, -6, 6, 10, 15, 17];
-
-                    for offset in knight_move_offsets {
-                        let target_square = {
-                            let tmp = square as isize + offset;
-                            if !(0..64).contains(&tmp) {
-                                continue;
-                            }
-                            tmp as usize
-                        };
-
-                        if !Self::is_pacman_move(square, target_square)
-                            && target_square == king_square
-                        {
-                            return true;
-                        }
-                    }
-                }
-                Piece::Bishop | Piece::Queen | Piece::Rook => {
-                    let piece = self.board.squares[square]
-                        .expect("should not be generating sliding moves from an empty square");
-
-                    let start_direction_index = if piece == Piece::Bishop { 4 } else { 0 };
-                    let end_direction_index = if piece == Piece::Rook { 4 } else { 8 };
-
-                    for direction_index in start_direction_index..end_direction_index {
-                        for n in 0..self.num_squares_to_edge[square][direction_index] {
-                            let target_square = square as isize
-                                + self.direction_offsets[direction_index] * (n as isize + 1);
-                            let target_square = target_square as usize;
-                            if target_square == king_square {
+                if self.board.colors[potential_sliding_piece_square] == Some(to_move) {
+                    match self.board.squares[potential_sliding_piece_square].unwrap() {
+                        Piece::King | Piece::Pawn | Piece::Knight => break,
+                        Piece::Rook => {
+                            if direction_offset == 8
+                                || direction_offset == -8
+                                || direction_offset == 1
+                                || direction_offset == -1
+                            {
                                 return true;
+                            } else {
+                                break;
                             }
-
-                            match self.board.colors[target_square] {
-                                None => continue,
-                                Some(_) => break,
+                        }
+                        Piece::Bishop => {
+                            if direction_offset == 7
+                                || direction_offset == -7
+                                || direction_offset == 9
+                                || direction_offset == -9
+                            {
+                                return true;
+                            } else {
+                                break;
                             }
+                        }
+                        Piece::Queen => {
+                            return true;
                         }
                     }
                 }
+            }
+        }
+
+        false
+    }
+
+    fn is_checked_by_pawn(&self, king_square: usize, to_move: Color) -> bool {
+        let king_checking_pawn_squares = match to_move.opposite_color() {
+            Color::White => [7, 9],
+            Color::Black => [-7, -9],
+        };
+
+        for capture_offset in &king_checking_pawn_squares {
+            let potential_pawn_square = {
+                let tmp = king_square as isize + capture_offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
+                tmp as usize
+            };
+
+            if Self::is_pacman_move(potential_pawn_square, king_square) {
+                continue;
+            }
+
+            if self.board.squares[potential_pawn_square] == Some(Piece::Pawn)
+                && self.board.colors[potential_pawn_square] == Some(to_move)
+            {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    fn is_checked_by_knight(&self, king_square: usize, to_move: Color) -> bool {
+        let knight_move_offsets = [-17, -15, -10, -6, 6, 10, 15, 17];
+
+        for offset in knight_move_offsets {
+            let knight_square = {
+                let tmp = king_square as isize + offset;
+                if !(0..64).contains(&tmp) {
+                    continue;
+                }
+                tmp as usize
+            };
+
+            if Self::is_pacman_move(knight_square, king_square) {
+                continue;
+            }
+
+            if self.board.squares[knight_square] == Some(Piece::Knight)
+                && self.board.colors[knight_square] == Some(to_move)
+            {
+                return true;
             }
         }
 
