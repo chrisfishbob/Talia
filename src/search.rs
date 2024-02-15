@@ -1,11 +1,14 @@
 use anyhow::{bail, Result};
 use reqwest::{self, blocking::Client};
 use serde::Deserialize;
-use std::sync::atomic::{AtomicI32, Ordering};
+use std::{
+    sync::atomic::{AtomicI32, Ordering},
+    time::{SystemTime, UNIX_EPOCH}, fmt::format,
+};
 
 use crate::{
     evaluate::evaluate,
-    move_generation::{Flag, Move, MoveGenerator},
+    move_generation::{Flag, Move, MoveGenerator}, bot::log,
 };
 
 const MAX_DEPTH: i32 = 100;
@@ -81,7 +84,18 @@ impl TablebaseResponse {
     }
 }
 
-pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, beta: i32) -> i32 {
+pub fn search(
+    move_generator: &mut MoveGenerator,
+    depth: u32,
+    mut alpha: i32,
+    beta: i32,
+    search_start_time: u128,
+    search_time: u128,
+) -> i32 {
+    if search_time_depleted(search_start_time, search_time) {
+        return 0;
+    }
+
     if depth == 0 {
         COUNTER.fetch_add(1, Ordering::Relaxed);
         return search_all_captures(move_generator, alpha, beta);
@@ -101,7 +115,14 @@ pub fn search(move_generator: &mut MoveGenerator, depth: u32, mut alpha: i32, be
     moves.sort_unstable_by_key(|mv| guess_move_score(move_generator, mv));
     for mv in moves.iter() {
         move_generator.board.move_piece(mv);
-        let eval = -search(move_generator, depth - 1, -beta, -alpha);
+        let eval = -search(
+            move_generator,
+            depth - 1,
+            -beta,
+            -alpha,
+            search_start_time,
+            search_time,
+        );
         move_generator.board.unmake_move(mv).unwrap();
 
         if eval >= beta {
@@ -175,9 +196,16 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
 pub fn find_best_move(
     moves: &mut [Move],
     move_generator: &mut MoveGenerator,
-    depth: u32,
+    search_time_ms: u128,
 ) -> (Move, i32) {
     COUNTER.store(0, Ordering::Relaxed);
+    log(&format!("Searching for {search_time_ms}"));
+
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let search_start_time = since_the_epoch.as_millis();
 
     let pieces_left = move_generator
         .board
@@ -194,22 +222,36 @@ pub fn find_best_move(
     }
     moves.sort_unstable_by_key(|mv| guess_move_score(move_generator, mv));
 
-    let mut best_move = moves
-        .get(0)
-        .expect("moves vector must have at least one move");
-
-    let mut best_eval = -INF;
     // Iterative deepending
-    // TODO: Use previous iterations to optimize search
-    // TODO: Actually take account of the clock
-    for curr_depth in 0..depth {
+    let mut previous_best_move: Option<Move> = None;
+    let mut previous_best_eval: Option<i32> = None;
+    for curr_depth in 0..u32::MAX {
+        log(&format!("Searching at depth {curr_depth}"));
         let mut alpha = -INF;
         let beta = INF;
 
+        let mut best_move = moves
+            .get(0)
+            .expect("moves vector must have at least one move");
+
+        let mut best_eval = -INF;
+
         for mv in moves.iter() {
             move_generator.board.move_piece(mv);
-            let eval = -search(move_generator, curr_depth, -beta, -alpha);
+            let eval = -search(
+                move_generator,
+                curr_depth,
+                -beta,
+                -alpha,
+                search_start_time,
+                search_time_ms,
+            );
             move_generator.board.unmake_move(mv).unwrap();
+
+            if search_time_depleted(search_start_time, search_time_ms) {
+                return (previous_best_move.unwrap(), previous_best_eval.unwrap());
+            }
+
             // If we see mate at the current depth, stop the search, since
             // the current move is guarenteed to be the fastest mate
             if eval == INF {
@@ -222,9 +264,22 @@ pub fn find_best_move(
                 best_eval = eval;
             }
         }
+
+        previous_best_move = Some(best_move.clone());
+        previous_best_eval = Some(best_eval.clone());
     }
 
-    (best_move.clone(), best_eval)
+    panic!("Ahh")
+}
+
+fn search_time_depleted(search_start_time: u128, search_time: u128) -> bool {
+    let start = SystemTime::now();
+    let since_the_epoch = start
+        .duration_since(UNIX_EPOCH)
+        .expect("Time went backwards");
+    let current_time = since_the_epoch.as_millis();
+
+    current_time >= search_start_time + search_time
 }
 
 pub fn guess_move_score(move_generator: &MoveGenerator, mv: &Move) -> i32 {

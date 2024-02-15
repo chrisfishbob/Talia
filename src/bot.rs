@@ -1,10 +1,11 @@
-use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::{fs::OpenOptions, ops::Index};
 
 use crate::{
     board::Board,
     board_builder::BoardBuilder,
     move_generation::{Move, MoveGenerator},
+    piece::Color,
     search::find_best_move,
 };
 use anyhow::{bail, Result};
@@ -44,8 +45,8 @@ impl Bot {
 
     fn process_commands(&mut self, commands: &[&str]) -> Result<()> {
         match commands {
-            ["uci"] => self.respond("uciok"),
-            ["isready"] => self.respond("readyok"),
+            ["uci"] => respond("uciok"),
+            ["isready"] => respond("readyok"),
             ["position", ..] => self.handle_position_command(commands)?,
             ["go", ..] => self.handle_go_command(commands)?,
             // TODO: Handle stop once clock is implemented in searcher
@@ -92,15 +93,58 @@ impl Bot {
         }
     }
 
+    fn choose_search_time_ms(
+        &self,
+        move_time: Option<u128>,
+        time_left_on_clock: Option<u128>,
+    ) -> u128 {
+        match (move_time, time_left_on_clock) {
+            (None, None) => 3000,
+            (Some(move_time), None) => move_time,
+            (None, Some(time_left_on_clock)) => self.decide_move_time(time_left_on_clock),
+            (Some(_), Some(_)) => panic!("encountered invalid search time options past validation"),
+        }
+    }
+
+    fn decide_move_time(&self, time_left_on_clock: u128) -> u128 {
+        let is_opening_phase = self.board.full_move_number < 10;
+        match is_opening_phase {
+            true => 3000,
+            false => time_left_on_clock / 30,
+        }
+    }
+
     fn handle_go_command(&mut self, _go_command: &[&str]) -> Result<()> {
-        // TODO: Handle time and increments
-        let depth = 6;
         let mut move_generator = MoveGenerator::new(self.board.clone());
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, depth);
+        let engine_time_id = if self.board.to_move == Color::White {
+            "wtime"
+        } else {
+            "btime"
+        };
+        let move_time: Option<u128> = match _go_command
+            .iter()
+            .position(|command| *command == "movetime")
+        {
+            None => None,
+            Some(index) => Some(_go_command[index + 1].parse().unwrap()),
+        };
+        let time_left_on_clock: Option<u128> = match _go_command
+            .iter()
+            .position(|command| *command == engine_time_id)
+        {
+            None => None,
+            Some(index) => Some(_go_command[index + 1].parse().unwrap()),
+        };
+
+        let (best_move, _) = find_best_move(
+            &mut moves,
+            &mut move_generator,
+            self.choose_search_time_ms(move_time, time_left_on_clock),
+        );
         self.board.move_piece(&best_move);
 
-        self.respond(&format!("bestmove {best_move}"));
+        respond(&format!("bestmove {best_move}"));
 
         Ok(())
     }
@@ -114,11 +158,6 @@ impl Bot {
         }
     }
 
-    fn respond(&self, data: &str) {
-        println!("{data}");
-        self.log(data);
-    }
-
     fn log(&self, data: &str) {
         let mut file = OpenOptions::new()
             .create(true)
@@ -128,6 +167,21 @@ impl Bot {
 
         writeln!(file, "{data}").expect("Unable to write to log file");
     }
+}
+
+pub fn respond(data: &str) {
+    println!("{data}");
+    log(data);
+}
+
+pub fn log(data: &str) {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("/tmp/talia.log")
+        .expect("Unable to open file");
+
+    writeln!(file, "{data}").expect("Unable to write to log file");
 }
 
 impl Default for Bot {

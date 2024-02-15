@@ -86,7 +86,7 @@ impl Game {
                 let (best_move, mut best_eval) = find_best_move(
                     &mut move_generator.generate_moves(),
                     &mut move_generator,
-                    self.engine_search_depth,
+                    1000,
                 );
                 let end_time = std::time::Instant::now();
                 let elapsed_time = end_time.duration_since(start_time).as_millis();
