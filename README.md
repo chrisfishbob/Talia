@@ -2,6 +2,7 @@
 
 ## Overview
 Talia is a UCI-compliant, thoroughly tested chess engine written from the ground up in Rust.
+(Some of the code here might be a bit sketch because I'm scrambling for time)
 
 
 ## Instructions
