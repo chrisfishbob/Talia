@@ -3,7 +3,7 @@ use reqwest::{self, blocking::Client};
 use serde::Deserialize;
 use std::{
     sync::atomic::{AtomicI32, Ordering},
-    time::{SystemTime, UNIX_EPOCH}, fmt::format,
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::{
@@ -193,6 +193,8 @@ pub fn query_tablebase(move_generator: &mut MoveGenerator) -> Result<(Move, i32)
     Ok((Move::try_from_uci(&best_move.uci, move_generator)?, eval))
 }
 
+// This entire function is a mess but no time to fix lol.
+// Engine goes brrrrrrrrrr
 pub fn find_best_move(
     moves: &mut [Move],
     move_generator: &mut MoveGenerator,
@@ -336,7 +338,7 @@ mod tests {
 
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, eval) = find_best_move(&mut moves, &mut move_generator, 2);
+        let (best_move, eval) = find_best_move(&mut moves, &mut move_generator, 100);
         let mating_move = Move::from_square(Square::A8, Square::A1, Flag::None);
 
         assert!(best_move == mating_move);
@@ -352,7 +354,7 @@ mod tests {
         let board: Board = BoardBuilder::try_from_fen("k6r/2p3pp/4p3/4P3/7q/8/5r2/3K4 b - - 1 41")?;
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
         let expected_best_move = Move::from_square(Square::H4, Square::H1, Flag::None);
 
         assert!(best_move == expected_best_move);
@@ -366,7 +368,7 @@ mod tests {
             BoardBuilder::try_from_fen("k6r/2p2ppp/4P3/4P3/8/1r6/4KP1P/2q5 b - - 0 36")?;
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 6);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
         // The only mate in two move
         let expected_best_move = Move::from_square(Square::H8, Square::D8, Flag::None);
 
@@ -387,7 +389,7 @@ mod tests {
 
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 2);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
         let capture_move = Move::from_square(Square::E1, Square::E5, Flag::Capture(Piece::Queen));
 
         assert!(best_move == capture_move);
@@ -407,7 +409,7 @@ mod tests {
 
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 3);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
         let capture_move = Move::from_square(Square::A1, Square::E1, Flag::None);
 
         assert!(best_move == capture_move);
@@ -427,7 +429,7 @@ mod tests {
 
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 3);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
         let forking_move = Move::from_square(Square::D1, Square::E3, Flag::None);
 
         assert!(best_move == forking_move);
@@ -446,7 +448,7 @@ mod tests {
 
         let mut move_generator = MoveGenerator::new(board);
         let mut moves = move_generator.generate_moves();
-        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 3);
+        let (best_move, _) = find_best_move(&mut moves, &mut move_generator, 100);
 
         assert!(
             best_move == Move::from_square(Square::A7, Square::A8, Flag::PromoteTo(Piece::Queen))

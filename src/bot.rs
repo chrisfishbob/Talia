@@ -1,5 +1,5 @@
 use std::io::prelude::*;
-use std::{fs::OpenOptions, ops::Index};
+use std::{fs::OpenOptions};
 
 use crate::{
     board::Board,
@@ -109,7 +109,7 @@ impl Bot {
     fn decide_move_time(&self, time_left_on_clock: u128) -> u128 {
         let is_opening_phase = self.board.full_move_number < 10;
         match is_opening_phase {
-            true => 3000,
+            true => time_left_on_clock / 60,
             false => time_left_on_clock / 30,
         }
     }
