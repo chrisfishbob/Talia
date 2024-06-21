@@ -8,10 +8,7 @@ use crate::{
     move_generation::{Flag, Move, MoveGenerator},
 };
 
-const MAX_DEPTH: i32 = 100;
-// Subtract MAX_DEPTH from INF to leave space to differentiate
-// mating moves with DTM
-const INF: i32 = i32::MAX - MAX_DEPTH;
+const INF: i32 = i32::MAX;
 pub static COUNTER: AtomicI32 = AtomicI32::new(0);
 
 #[allow(unused)]
@@ -201,7 +198,6 @@ pub fn find_best_move(
     let mut best_eval = -INF;
     // Iterative deepending
     // TODO: Use previous iterations to optimize search
-    // TODO: Actually take account of the clock
     for curr_depth in 0..depth {
         let mut alpha = -INF;
         let beta = INF;
